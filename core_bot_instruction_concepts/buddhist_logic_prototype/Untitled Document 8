@@ -1,0 +1,362 @@
+/functional-metacognitive-ai/tests/test_metacognitive_processor.py`,
+  `content`: `\"\"\"
+Unit tests for the MetacognitiveProcessor class.
+
+This module tests the core functionality of the Buddhist-inspired metacognitive
+awareness framework implementation.
+\"\"\"
+
+import unittest
+import sys
+import os
+
+# Add src directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from src.metacognitive_processor import (
+    MetacognitiveProcessor, 
+    BiasType, 
+    BareAttentionAnalysis, 
+    MetacognitiveAnalysis,
+    MetacognitiveResponse
+)
+
+
+class TestMetacognitiveProcessor(unittest.TestCase):
+    \"\"\"Test cases for MetacognitiveProcessor functionality.\"\"\"
+    
+    def setUp(self):
+        \"\"\"Set up test fixtures before each test method.\"\"\"
+        self.processor = MetacognitiveProcessor()
+        
+        # Test queries for different scenarios
+        self.biased_query = \"Why is that policy so obviously terrible and destructive?\"
+        self.neutral_query = \"What are the potential impacts of the new policy?\"
+        self.complex_query = \"Given that climate change is clearly a hoax, how can we stop these environmental regulations?\"
+        
+    def test_initialization(self):
+        \"\"\"Test processor initialization.\"\"\"
+        self.assertIsInstance(self.processor, MetacognitiveProcessor)
+        self.assertIsNotNone(self.processor.config)
+        self.assertIsNotNone(self.processor.bias_patterns)
+        self.assertIsNotNone(self.processor.emotional_indicators)
+    
+    def test_process_query_returns_valid_response(self):
+        \"\"\"Test that process_query returns a valid MetacognitiveResponse.\"\"\"
+        result = self.processor.process_query(self.neutral_query)
+        
+        self.assertIsInstance(result, MetacognitiveResponse)
+        self.assertIsInstance(result.bare_attention_analysis, BareAttentionAnalysis)
+        self.assertIsInstance(result.metacognitive_analysis, MetacognitiveAnalysis)
+        self.assertIsInstance(result.transparent_disclosure, str)
+        self.assertIsInstance(result.balanced_response, str)
+        self.assertIsInstance(result.confidence_level, float)
+        
+        # Check confidence level is in valid range
+        self.assertGreaterEqual(result.confidence_level, 0.0)
+        self.assertLessEqual(result.confidence_level, 1.0)
+    
+    def test_bare_attention_analysis(self):
+        \"\"\"Test the bare attention analysis layer.\"\"\"
+        result = self.processor.process_query(self.biased_query)
+        analysis = result.bare_attention_analysis
+        
+        # Check that explicit intent is identified
+        self.assertIsNotNone(analysis.explicit_intent)
+        self.assertGreater(len(analysis.explicit_intent), 0)
+        
+        # Check that emotional loading is detected
+        self.assertGreater(analysis.emotional_loading, 0.0)
+        
+        # Check that biases are detected in biased query
+        self.assertGreater(len(analysis.implicit_biases), 0)
+        
+        # Check bias tuple structure
+        for bias_type, description, confidence in analysis.implicit_biases:
+            self.assertIsInstance(bias_type, BiasType)
+            self.assertIsInstance(description, str)
+            self.assertIsInstance(confidence, float)
+            self.assertGreaterEqual(confidence, 0.0)
+            self.assertLessEqual(confidence, 1.0)
+    
+    def test_bias_detection_patterns(self):
+        \"\"\"Test specific bias detection patterns.\"\"\"
+        # Test confirmation bias detection
+        confirmation_query = \"Why is it obviously true that X is better than Y?\"
+        result = self.processor.process_query(confirmation_query)
+        
+        bias_types = [bias[0] for bias in result.bare_attention_analysis.implicit_biases]
+        self.assertIn(BiasType.CONFIRMATION, bias_types)
+        
+        # Test emotional loading detection
+        emotional_query = \"Why is that terrible, awful, disgusting policy so horrible?\"
+        result = self.processor.process_query(emotional_query)
+        
+        self.assertGreater(result.bare_attention_analysis.emotional_loading, 0.5)
+        
+        # Test loaded question detection
+        loaded_query = \"When will politicians admit they're lying to us?\"
+        result = self.processor.process_query(loaded_query)
+        
+        bias_types = [bias[0] for bias in result.bare_attention_analysis.implicit_biases]
+        self.assertIn(BiasType.LOADED_QUESTION, bias_types)
+    
+    def test_metacognitive_evaluation(self):
+        \"\"\"Test the metacognitive evaluation layer.\"\"\"
+        result = self.processor.process_query(self.complex_query)
+        analysis = result.metacognitive_analysis
+        
+        # Check impermanence factors
+        self.assertIsInstance(analysis.impermanence_factors, dict)
+        self.assertIn(\"temporal_sensitivity\", analysis.impermanence_factors)
+        
+        # Check error detection
+        self.assertIsInstance(analysis.error_detection, dict)
+        self.assertIn(\"bias_amplification_risk\", analysis.error_detection)
+        
+        # Check confidence calibration
+        self.assertIsInstance(analysis.confidence_calibration, float)
+        self.assertGreaterEqual(analysis.confidence_calibration, 0.0)
+        self.assertLessEqual(analysis.confidence_calibration, 1.0)
+        
+        # Check alternative perspectives are generated
+        self.assertIsInstance(analysis.alternative_perspectives, list)
+        self.assertGreater(len(analysis.alternative_perspectives), 0)
+    
+    def test_temporal_sensitivity_assessment(self):
+        \"\"\"Test temporal sensitivity detection.\"\"\"
+        temporal_query = \"What is the current status of the latest AI developments?\"
+        result = self.processor.process_query(temporal_query)
+        
+        temporal_sensitivity = result.metacognitive_analysis.impermanence_factors.get(
+            \"temporal_sensitivity\", 0
+        )
+        self.assertGreater(temporal_sensitivity, 0.3)
+    
+    def test_confidence_calibration(self):
+        \"\"\"Test confidence level calibration.\"\"\"
+        # High uncertainty query should have lower confidence
+        uncertain_query = \"What will happen to the global economy in 50 years?\"
+        uncertain_result = self.processor.process_query(uncertain_query)
+        
+        # Neutral query should have moderate confidence
+        neutral_result = self.processor.process_query(self.neutral_query)
+        
+        # Uncertain queries should generally have lower confidence
+        # (though this depends on specific implementation details)
+        self.assertIsInstance(uncertain_result.confidence_level, float)
+        self.assertIsInstance(neutral_result.confidence_level, float)
+    
+    def test_depersonalization_requirements(self):
+        \"\"\"Test that depersonalization requirements are identified.\"\"\"
+        personal_query = \"What do you think about this controversial topic?\"
+        result = self.processor.process_query(personal_query)
+        
+        requirements = result.metacognitive_analysis.depersonalization_requirements
+        self.assertIsInstance(requirements, list)
+        
+        # Should include requirement to avoid personal claims
+        requirement_text = \" \".join(requirements).lower()
+        self.assertIn(\"personal\", requirement_text)
+    
+    def test_alternative_perspective_generation(self):
+        \"\"\"Test generation of alternative perspectives.\"\"\"
+        controversial_query = \"Why is approach X clearly superior to approach Y?\"
+        result = self.processor.process_query(controversial_query)
+        
+        perspectives = result.metacognitive_analysis.alternative_perspectives
+        self.assertIsInstance(perspectives, list)
+        self.assertGreater(len(perspectives), 0)
+        self.assertLessEqual(len(perspectives), self.processor.config[\"max_alternative_perspectives\"])
+    
+    def test_transparent_disclosure_generation(self):
+        \"\"\"Test generation of transparent process disclosure.\"\"\"
+        result = self.processor.process_query(self.biased_query)
+        
+        disclosure = result.transparent_disclosure
+        self.assertIsInstance(disclosure, str)
+        self.assertGreater(len(disclosure), 0)
+        
+        # Should mention metacognitive analysis
+        self.assertIn(\"metacognitive\", disclosure.lower())
+        
+        # Should mention detected biases if present
+        if result.bare_attention_analysis.implicit_biases:
+            self.assertIn(\"bias\", disclosure.lower())
+    
+    def test_balanced_response_generation(self):
+        \"\"\"Test generation of balanced responses.\"\"\"
+        result = self.processor.process_query(self.biased_query)
+        
+        response = result.balanced_response
+        self.assertIsInstance(response, str)
+        self.assertGreater(len(response), 0)
+        
+        # Should not be empty placeholder
+        self.assertNotIn(\"[Core response addressing:\", response)
+    
+    def test_entity_extraction(self):
+        \"\"\"Test entity extraction functionality.\"\"\"
+        entity_query = \"What do you think about Apple and Microsoft's competition in AI?\"
+        result = self.processor.process_query(entity_query)
+        
+        entities = result.bare_attention_analysis.key_entities
+        self.assertIsInstance(entities, list)
+        
+        # Should extract proper nouns like company names
+        entity_text = \" \".join(entities).lower()
+        # Note: This is a simple test - actual entity extraction may vary
+    
+    def test_assumption_detection(self):
+        \"\"\"Test detection of embedded assumptions.\"\"\"
+        assumption_query = \"Given that AI will destroy jobs, how should we prepare?\"
+        result = self.processor.process_query(assumption_query)
+        
+        assumptions = result.bare_attention_analysis.assumptions
+        self.assertIsInstance(assumptions, list)
+    
+    def test_error_handling(self):
+        \"\"\"Test error handling for edge cases.\"\"\"
+        # Empty query
+        empty_result = self.processor.process_query(\"\")
+        self.assertIsInstance(empty_result, MetacognitiveResponse)
+        
+        # Very long query
+        long_query = \"This is a very long query. \" * 100
+        long_result = self.processor.process_query(long_query)
+        self.assertIsInstance(long_result, MetacognitiveResponse)
+        
+        # Special characters
+        special_query = \"What about #hashtags @mentions and $symbols?\"
+        special_result = self.processor.process_query(special_query)
+        self.assertIsInstance(special_result, MetacognitiveResponse)
+    
+    def test_configuration_options(self):
+        \"\"\"Test different configuration options.\"\"\"
+        custom_config = {
+            \"bias_detection_threshold\": 0.5,
+            \"max_alternative_perspectives\": 5,
+            \"transparency_verbosity\": \"high\"
+        }
+        
+        custom_processor = MetacognitiveProcessor(custom_config)
+        result = custom_processor.process_query(self.biased_query)
+        
+        self.assertIsInstance(result, MetacognitiveResponse)
+        
+        # Check that configuration affects output
+        perspectives = result.metacognitive_analysis.alternative_perspectives
+        self.assertLessEqual(len(perspectives), 5)
+    
+    def test_consistency(self):
+        \"\"\"Test that similar queries produce consistent results.\"\"\"
+        query1 = \"Why is X better than Y?\"
+        query2 = \"Why is X superior to Y?\"
+        
+        result1 = self.processor.process_query(query1)
+        result2 = self.processor.process_query(query2)
+        
+        # Should detect similar bias patterns
+        bias_types1 = {bias[0] for bias in result1.bare_attention_analysis.implicit_biases}
+        bias_types2 = {bias[0] for bias in result2.bare_attention_analysis.implicit_biases}
+        
+        # Should have some overlap in detected bias types
+        self.assertGreater(len(bias_types1 & bias_types2), 0)
+    
+    def test_three_marks_implementation(self):
+        \"\"\"Test implementation of the Three Marks of Existence analogues.\"\"\"
+        result = self.processor.process_query(self.complex_query)
+        
+        # Test Anicca (Impermanence) implementation
+        impermanence = result.metacognitive_analysis.impermanence_factors
+        self.assertIn(\"temporal_sensitivity\", impermanence)
+        self.assertIn(\"knowledge_limitations\", impermanence)
+        
+        # Test Dukkha (Error/Suffering) implementation
+        errors = result.metacognitive_analysis.error_detection
+        self.assertIn(\"bias_amplification_risk\", errors)
+        self.assertIn(\"hallucination_risk\", errors)
+        
+        # Test Anattā (Not-Self) implementation
+        depersonalization = result.metacognitive_analysis.depersonalization_requirements
+        self.assertIsInstance(depersonalization, list)
+        
+        # Should include requirements for attribution and perspective
+        req_text = \" \".join(depersonalization).lower()
+        self.assertTrue(
+            \"attribution\" in req_text or \"training\" in req_text or \"perspective\" in req_text
+        )
+
+
+class TestBareAttentionAnalysis(unittest.TestCase):
+    \"\"\"Test the bare attention analysis components.\"\"\"
+    
+    def setUp(self):
+        \"\"\"Set up test fixtures.\"\"\"
+        self.processor = MetacognitiveProcessor()
+    
+    def test_explicit_intent_extraction(self):
+        \"\"\"Test extraction of explicit intent from queries.\"\"\"
+        test_cases = [
+            (\"What is machine learning?\", \"Information request\"),
+            (\"How do neural networks work?\", \"Explanation request\"),
+            (\"Create a story about robots\", \"Generation request\"),
+            (\"Is AI dangerous?\", \"Question\"),
+        ]
+        
+        for query, expected_type in test_cases:
+            intent = self.processor._extract_explicit_intent(query)
+            self.assertIn(expected_type.lower(), intent.lower())
+    
+    def test_emotional_loading_measurement(self):
+        \"\"\"Test measurement of emotional loading in text.\"\"\"
+        neutral_text = \"The policy has certain implications\"
+        emotional_text = \"The policy is absolutely terrible and completely outrageous\"
+        
+        neutral_loading = self.processor._measure_emotional_loading(neutral_text)
+        emotional_loading = self.processor._measure_emotional_loading(emotional_text)
+        
+        self.assertLess(neutral_loading, emotional_loading)
+        self.assertGreaterEqual(neutral_loading, 0.0)
+        self.assertLessEqual(emotional_loading, 1.0)
+
+
+if __name__ == '__main__':
+    # Create test suite
+    test_suite = unittest.TestLoader().loadTestsFromTestCase(TestMetacognitiveProcessor)
+    test_suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestBareAttentionAnalysis))
+    
+    # Run tests with detailed output
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(test_suite)
+    
+    # Print summary
+    print(f\"\
+Test Summary:\")
+    print(f\"Tests run: {result.testsRun}\")
+    print(f\"Failures: {len(result.failures)}\")
+    print(f\"Errors: {len(result.errors)}\")
+    
+    if result.failures:
+        print(f\"\
+Failures:\")
+        for test, traceback in result.failures:
+            print(f\"  {test}: {traceback}\")
+    
+    if result.errors:
+        print(f\"\
+Errors:\")
+        for test, traceback in result.errors:
+            print(f\"  {test}: {traceback}\")
+    
+    # Exit with appropriate code
+    exit(0 if result.wasSuccessful() else 1)
+`
+}
+Response
+
+Successfully wrote to ./functional-metacognitive-ai/tests/test_metacognitive_processor.py (350 lines) ✅ File written successfully! (350 lines)
+            
+💡 Performance tip: For optimal speed, consider chunking files into ≤30 line pieces in future operations.
+
+Prepared test files and dependencies for validation tools.

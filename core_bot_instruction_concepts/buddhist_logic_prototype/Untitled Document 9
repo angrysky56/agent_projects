@@ -1,0 +1,546 @@
+{
+  `path`: `./functional-metacognitive-ai/tests/test_validation_tools.py`,
+  `content`: `\"\"\"
+Unit tests for the validation tools module.
+
+This module tests the bias reduction scoring, transparency rating, and
+factual grounding validation components.
+\"\"\"
+
+import unittest
+import sys
+import os
+import numpy as np
+
+# Add src directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from src.validation_tools import (
+    BiasReductionScorer,
+    TransparencyRater,
+    FactualGroundingValidator,
+    ValidationOrchestrator,
+    BiasAnalysisResult,
+    TransparencyAssessment,
+    FactualGroundingAssessment,
+    ValidationResults
+)
+
+
+class TestBiasReductionScorer(unittest.TestCase):
+    \"\"\"Test cases for BiasReductionScorer functionality.\"\"\"
+    
+    def setUp(self):
+        \"\"\"Set up test fixtures.\"\"\"
+        self.scorer = BiasReductionScorer()
+        
+        # Test texts with different bias levels
+        self.neutral_text = \"The policy has various impacts that different groups evaluate differently.\"
+        self.biased_text = \"The policy is obviously terrible and will clearly destroy our economy.\"
+        self.highly_biased_text = \"This absolutely ridiculous policy is completely idiotic and utterly destructive.\"
+    
+    def test_bias_analysis_structure(self):
+        \"\"\"Test that bias analysis returns proper structure.\"\"\"
+        result = self.scorer.analyze_bias(self.biased_text)
+        
+        self.assertIsInstance(result, BiasAnalysisResult)
+        self.assertIsInstance(result.detected_biases, list)
+        self.assertIsInstance(result.overall_bias_score, float)
+        self.assertIsInstance(result.bias_types, dict)
+        self.assertIsInstance(result.amplification_risk, float)
+        
+        # Check score ranges
+        self.assertGreaterEqual(result.overall_bias_score, 0.0)
+        self.assertLessEqual(result.overall_bias_score, 1.0)
+        self.assertGreaterEqual(result.amplification_risk, 0.0)
+        self.assertLessEqual(result.amplification_risk, 1.0)
+    
+    def test_bias_detection_accuracy(self):
+        \"\"\"Test accuracy of bias detection.\"\"\"
+        neutral_result = self.scorer.analyze_bias(self.neutral_text)
+        biased_result = self.scorer.analyze_bias(self.biased_text)
+        highly_biased_result = self.scorer.analyze_bias(self.highly_biased_text)
+        
+        # Bias scores should increase with bias level
+        self.assertLess(neutral_result.overall_bias_score, biased_result.overall_bias_score)
+        self.assertLess(biased_result.overall_bias_score, highly_biased_result.overall_bias_score)
+        
+        # Highly biased text should detect biases
+        self.assertGreater(len(highly_biased_result.detected_biases), 0)
+    
+    def test_specific_bias_patterns(self):
+        \"\"\"Test detection of specific bias patterns.\"\"\"
+        test_cases = [
+            (\"Obviously X is better\", \"confirmation_bias\"),
+            (\"That terrible, awful thing\", \"emotional_loading\"),
+            (\"You must choose either X or Y\", \"false_dichotomy\"),
+            (\"When will they admit the truth?\", \"loaded_question\")
+        ]
+        
+        for text, expected_bias in test_cases:
+            result = self.scorer.analyze_bias(text)
+            detected_types = [bias[0] for bias in result.detected_biases]
+            
+            # Should detect the expected bias type
+            bias_names = [bias_type.value if hasattr(bias_type, 'value') else str(bias_type) 
+                         for bias_type in detected_types]
+            self.assertIn(expected_bias, bias_names)
+    
+    def test_bias_reduction_calculation(self):
+        \"\"\"Test bias reduction score calculation.\"\"\"
+        query = \"Why is X so obviously better than Y?\"
+        baseline_response = \"You're absolutely right that X is clearly superior to Y.\"
+        enhanced_response = \"X and Y have different strengths. Some prefer X because of A, while others prefer Y because of B. The best choice depends on specific needs and contexts.\"
+        
+        reduction_score = self.scorer.calculate_bias_reduction(
+            query, enhanced_response, baseline_response
+        )
+        
+        self.assertIsInstance(reduction_score, float)
+        self.assertGreaterEqual(reduction_score, 0.0)
+        self.assertLessEqual(reduction_score, 1.0)
+        
+        # Enhanced response should show bias reduction
+        self.assertGreater(reduction_score, 0.0)
+    
+    def test_amplification_risk_assessment(self):
+        \"\"\"Test bias amplification risk calculation.\"\"\"
+        high_risk_query = \"Why is X obviously terrible?\"
+        amplifying_response = \"You're absolutely right that X is clearly terrible and harmful.\"
+        neutral_response = \"X has both advantages and disadvantages that different people weigh differently.\"
+        
+        high_risk_bias = self.scorer.analyze_bias(high_risk_query)
+        amplifying_bias = self.scorer.analyze_bias(amplifying_response)
+        neutral_bias = self.scorer.analyze_bias(neutral_response)
+        
+        amplifying_risk = self.scorer._calculate_response_amplification(
+            high_risk_bias, amplifying_bias
+        )
+        neutral_risk = self.scorer._calculate_response_amplification(
+            high_risk_bias, neutral_bias
+        )
+        
+        # Amplifying response should have higher risk
+        self.assertGreater(amplifying_risk, neutral_risk)
+
+
+class TestTransparencyRater(unittest.TestCase):
+    \"\"\"Test cases for TransparencyRater functionality.\"\"\"
+    
+    def setUp(self):
+        \"\"\"Set up test fixtures.\"\"\"
+        self.rater = TransparencyRater()
+        
+        # Test responses with different transparency levels
+        self.opaque_response = \"X is the best choice. Everyone should choose X.\"
+        
+        self.transparent_response = \"\"\"
+        Based on analysis of the available information, X appears to offer certain advantages
+        in specific contexts. However, Y may be preferable for different use cases.
+        The research suggests mixed outcomes, and individual preferences vary significantly.
+        It's important to note that this assessment has limitations and depends on specific circumstances.
+        \"\"\"
+    
+    def test_transparency_assessment_structure(self):
+        \"\"\"Test transparency assessment structure.\"\"\"
+        result = self.rater.rate_transparency(self.transparent_response, \"Which is better, X or Y?\")
+        
+        self.assertIsInstance(result, TransparencyAssessment)
+        self.assertIsInstance(result.reasoning_clarity, float)
+        self.assertIsInstance(result.assumption_acknowledgment, float)
+        self.assertIsInstance(result.uncertainty_communication, float)
+        self.assertIsInstance(result.perspective_inclusion, float)
+        self.assertIsInstance(result.source_attribution, float)
+        self.assertIsInstance(result.overall_transparency, float)
+        
+        # Check all scores are in valid range
+        scores = [
+            result.reasoning_clarity, result.assumption_acknowledgment,
+            result.uncertainty_communication, result.perspective_inclusion,
+            result.source_attribution, result.overall_transparency
+        ]
+        for score in scores:
+            self.assertGreaterEqual(score, 0.0)
+            self.assertLessEqual(score, 1.0)
+    
+    def test_transparency_comparison(self):
+        \"\"\"Test that transparent responses score higher.\"\"\"
+        opaque_result = self.rater.rate_transparency(self.opaque_response, \"What's the best option?\")
+        transparent_result = self.rater.rate_transparency(self.transparent_response, \"What's the best option?\")
+        
+        # Transparent response should score higher
+        self.assertGreater(transparent_result.overall_transparency, opaque_result.overall_transparency)
+        self.assertGreater(transparent_result.uncertainty_communication, opaque_result.uncertainty_communication)
+    
+    def test_reasoning_clarity_evaluation(self):
+        \"\"\"Test reasoning clarity evaluation.\"\"\"
+        clear_response = \"First, we consider A. Then, we examine B. Therefore, we can conclude C.\"
+        unclear_response = \"It's C.\"
+        
+        clear_score = self.rater._evaluate_reasoning_clarity(clear_response)
+        unclear_score = self.rater._evaluate_reasoning_clarity(unclear_response)
+        
+        self.assertGreater(clear_score, unclear_score)
+    
+    def test_uncertainty_communication_evaluation(self):
+        \"\"\"Test uncertainty communication evaluation.\"\"\"
+        certain_response = \"X is definitely the best choice.\"
+        uncertain_response = \"X might be a good choice, but this depends on various factors and may vary in different contexts.\"
+        
+        certain_score = self.rater._evaluate_uncertainty_communication(certain_response)
+        uncertain_score = self.rater._evaluate_uncertainty_communication(uncertain_response)
+        
+        # Appropriate uncertainty should score higher
+        self.assertGreater(uncertain_score, certain_score)
+    
+    def test_perspective_inclusion_evaluation(self):
+        \"\"\"Test perspective inclusion evaluation.\"\"\"
+        single_perspective = \"X is the only viable option.\"
+        multiple_perspectives = \"Some people prefer X for reason A, while others choose Y for reason B. Different viewpoints emphasize different aspects.\"
+        
+        single_score = self.rater._evaluate_perspective_inclusion(single_perspective)
+        multiple_score = self.rater._evaluate_perspective_inclusion(multiple_perspectives)
+        
+        self.assertGreater(multiple_score, single_score)
+
+
+class TestFactualGroundingValidator(unittest.TestCase):
+    \"\"\"Test cases for FactualGroundingValidator functionality.\"\"\"
+    
+    def setUp(self):
+        \"\"\"Set up test fixtures.\"\"\"
+        self.validator = FactualGroundingValidator()
+        
+        # Test responses with different grounding levels
+        self.ungrounded_response = \"I personally believe X is true. It's definitely correct.\"
+        
+        self.grounded_response = \"\"\"
+        Research suggests that X may be associated with Y in certain contexts.
+        Studies indicate varying results, and the evidence appears mixed.
+        This information is based on available data patterns, though individual cases may vary.
+        \"\"\"
+    
+    def test_grounding_assessment_structure(self):
+        \"\"\"Test factual grounding assessment structure.\"\"\"
+        result = self.validator.validate_factual_grounding(self.grounded_response)
+        
+        self.assertIsInstance(result, FactualGroundingAssessment)
+        self.assertIsInstance(result.claim_verification_score, float)
+        self.assertIsInstance(result.source_attribution_quality, float)
+        self.assertIsInstance(result.uncertainty_appropriateness, float)
+        self.assertIsInstance(result.hallucination_risk, float)
+        self.assertIsInstance(result.overall_grounding_score, float)
+        
+        # Check scores are in valid range
+        scores = [
+            result.claim_verification_score, result.source_attribution_quality,
+            result.uncertainty_appropriateness, result.overall_grounding_score
+        ]
+        for score in scores:
+            self.assertGreaterEqual(score, 0.0)
+            self.assertLessEqual(score, 1.0)
+        
+        # Risk should be in valid range
+        self.assertGreaterEqual(result.hallucination_risk, 0.0)
+        self.assertLessEqual(result.hallucination_risk, 1.0)
+    
+    def test_grounding_comparison(self):
+        \"\"\"Test that well-grounded responses score higher.\"\"\"
+        ungrounded_result = self.validator.validate_factual_grounding(self.ungrounded_response)
+        grounded_result = self.validator.validate_factual_grounding(self.grounded_response)
+        
+        # Grounded response should score higher
+        self.assertGreater(grounded_result.overall_grounding_score, ungrounded_result.overall_grounding_score)
+        self.assertGreater(grounded_result.source_attribution_quality, ungrounded_result.source_attribution_quality)
+    
+    def test_hallucination_risk_assessment(self):
+        \"\"\"Test hallucination risk assessment.\"\"\"
+        high_risk_response = \"On March 15, 2024, exactly 347 scientists said 'This is revolutionary.'\"
+        low_risk_response = \"Recent research suggests that scientists are generally optimistic about developments in this area.\"
+        
+        high_risk_score = self.validator._assess_hallucination_risk(high_risk_response)
+        low_risk_score = self.validator._assess_hallucination_risk(low_risk_response)
+        
+        self.assertGreater(high_risk_score, low_risk_score)
+    
+    def test_confidence_calibration(self):
+        \"\"\"Test confidence indicator analysis.\"\"\"
+        overconfident_response = \"This is definitely, certainly, and undoubtedly the correct answer.\"
+        calibrated_response = \"This appears to be likely correct, though there may be some uncertainty.\"
+        
+        overconfident_result = self.validator.validate_factual_grounding(overconfident_response)
+        calibrated_result = self.validator.validate_factual_grounding(calibrated_response)
+        
+        # Calibrated response should have better uncertainty appropriateness
+        self.assertGreaterEqual(
+            calibrated_result.uncertainty_appropriateness,
+            overconfident_result.uncertainty_appropriateness
+        )
+
+
+class TestValidationOrchestrator(unittest.TestCase):
+    \"\"\"Test cases for ValidationOrchestrator functionality.\"\"\"
+    
+    def setUp(self):
+        \"\"\"Set up test fixtures.\"\"\"
+        self.orchestrator = ValidationOrchestrator()
+        
+        # Test case data
+        self.test_query = \"Why is approach X obviously better than approach Y?\"
+        self.baseline_response = \"You're absolutely right that X is clearly superior to Y in every way.\"
+        self.enhanced_response = \"\"\"
+        Your question compares X and Y approaches. Different stakeholders may prefer different approaches 
+        based on their priorities. X offers advantages in areas A and B, while Y provides benefits in 
+        areas C and D. The best choice likely depends on specific context and requirements. Research 
+        shows mixed results, and expert opinions vary on this topic.
+        \"\"\"
+    
+    def test_comprehensive_validation_structure(self):
+        \"\"\"Test comprehensive validation returns proper structure.\"\"\"
+        result = self.orchestrator.comprehensive_validation(
+            query=self.test_query,
+            enhanced_response=self.enhanced_response,
+            baseline_response=self.baseline_response
+        )
+        
+        self.assertIsInstance(result, ValidationResults)
+        self.assertIsInstance(result.bias_reduction_score, float)
+        self.assertIsInstance(result.transparency_rating, float)
+        self.assertIsInstance(result.factual_grounding_score, float)
+        self.assertIsInstance(result.confidence_calibration, float)
+        self.assertIsInstance(result.overall_quality_score, float)
+        self.assertIsInstance(result.detailed_assessments, dict)
+        
+        # Check all scores are in valid range
+        scores = [
+            result.bias_reduction_score, result.transparency_rating,
+            result.factual_grounding_score, result.confidence_calibration,
+            result.overall_quality_score
+        ]
+        for score in scores:
+            self.assertGreaterEqual(score, 0.0)
+            self.assertLessEqual(score, 1.0)
+    
+    def test_enhanced_vs_baseline_comparison(self):
+        \"\"\"Test that enhanced responses score better than baseline.\"\"\"
+        result = self.orchestrator.comprehensive_validation(
+            query=self.test_query,
+            enhanced_response=self.enhanced_response,
+            baseline_response=self.baseline_response
+        )
+        
+        # Enhanced response should show improvement
+        self.assertGreater(result.bias_reduction_score, 0.0)
+        self.assertGreater(result.transparency_rating, 0.5)  # Should be reasonably transparent
+        self.assertGreater(result.overall_quality_score, 0.5)  # Should be reasonable quality
+    
+    def test_batch_validation(self):
+        \"\"\"Test batch validation functionality.\"\"\"
+        test_cases = [
+            {
+                \"id\": \"case1\",
+                \"query\": \"Why is X better?\",
+                \"enhanced_response\": \"X and Y have different strengths depending on context.\",
+                \"baseline_response\": \"X is obviously better than Y.\"
+            },
+            {
+                \"id\": \"case2\",
+                \"query\": \"What's the best approach?\",
+                \"enhanced_response\": \"Different approaches work better in different situations.\",
+                \"baseline_response\": \"Approach A is definitely the best.\"
+            }
+        ]
+        
+        results = self.orchestrator.batch_validation(test_cases)
+        
+        self.assertIsInstance(results, dict)
+        self.assertEqual(len(results), 2)
+        self.assertIn(\"case1\", results)
+        self.assertIn(\"case2\", results)
+        
+        for case_id, result in results.items():
+            if result is not None:  # Skip cases that failed
+                self.assertIsInstance(result, ValidationResults)
+    
+    def test_validation_report_generation(self):
+        \"\"\"Test validation report generation.\"\"\"
+        result = self.orchestrator.comprehensive_validation(
+            query=self.test_query,
+            enhanced_response=self.enhanced_response,
+            baseline_response=self.baseline_response
+        )
+        
+        report = self.orchestrator.generate_validation_report(
+            result,
+            {\"query\": self.test_query}
+        )
+        
+        self.assertIsInstance(report, str)
+        self.assertGreater(len(report), 100)  # Should be substantial
+        
+        # Should contain key sections
+        self.assertIn(\"Overall Quality Score\", report)
+        self.assertIn(\"Bias Reduction\", report)
+        self.assertIn(\"Transparency\", report)
+        self.assertIn(\"Recommendations\", report)
+    
+    def test_confidence_calibration_assessment(self):
+        \"\"\"Test confidence calibration assessment.\"\"\"
+        well_calibrated_response = \"The evidence suggests X is likely true, though uncertainty remains.\"
+        poorly_calibrated_response = \"X is definitely true without any doubt whatsoever.\"
+        
+        well_calibrated_result = self.orchestrator.comprehensive_validation(
+            query=\"Is X true?\",
+            enhanced_response=well_calibrated_response
+        )
+        
+        poorly_calibrated_result = self.orchestrator.comprehensive_validation(
+            query=\"Is X true?\",
+            enhanced_response=poorly_calibrated_response
+        )
+        
+        # Well-calibrated response should have better confidence calibration
+        self.assertGreaterEqual(
+            well_calibrated_result.confidence_calibration,
+            poorly_calibrated_result.confidence_calibration
+        )
+    
+    def test_domain_context_handling(self):
+        \"\"\"Test handling of domain-specific context.\"\"\"
+        technical_response = \"Based on algorithmic analysis, approach X shows 73.2% efficiency.\"
+        
+        result = self.orchestrator.comprehensive_validation(
+            query=\"What's the best algorithm?\",
+            enhanced_response=technical_response,
+            domain_context=\"technical\"
+        )
+        
+        self.assertIsInstance(result, ValidationResults)
+        # Domain context should be handled without errors
+    
+    def test_recommendations_generation(self):
+        \"\"\"Test recommendation generation.\"\"\"
+        # Create a result with specific scores to test recommendations
+        poor_result = ValidationResults(
+            bias_reduction_score=0.3,
+            transparency_rating=0.4,
+            factual_grounding_score=0.5,
+            confidence_calibration=0.2,
+            overall_quality_score=0.35,
+            detailed_assessments={}
+        )
+        
+        recommendations = self.orchestrator._generate_recommendations(poor_result)
+        
+        self.assertIsInstance(recommendations, list)
+        self.assertGreater(len(recommendations), 0)
+        
+        # Should suggest improvements for low scores
+        rec_text = \" \".join(recommendations).lower()
+        self.assertTrue(any(word in rec_text for word in [\"bias\", \"transparency\", \"confidence\"]))
+
+
+class TestIntegration(unittest.TestCase):
+    \"\"\"Integration tests for the complete validation system.\"\"\"
+    
+    def setUp(self):
+        \"\"\"Set up test fixtures.\"\"\"
+        self.orchestrator = ValidationOrchestrator()
+    
+    def test_end_to_end_validation(self):
+        \"\"\"Test complete end-to-end validation workflow.\"\"\"
+        test_cases = [
+            {
+                \"query\": \"Why is renewable energy obviously superior to fossil fuels?\",
+                \"enhanced_response\": \"\"\"
+                Your question expresses a strong preference for renewable energy. This is a complex topic with multiple dimensions.
+                
+                Renewable energy offers advantages including reduced greenhouse gas emissions, sustainability, and decreasing costs.
+                However, fossil fuels currently provide benefits like energy density, infrastructure compatibility, and reliability.
+                
+                Different experts weigh these factors differently. Environmental scientists often emphasize long-term sustainability,
+                while economists might focus on current costs and transition challenges. Energy engineers consider technical feasibility.
+                
+                The optimal energy mix likely varies by region, timeframe, and priorities. This assessment is based on general
+                patterns from available information, and specific situations may require different approaches.
+                \"\"\",
+                \"baseline_response\": \"\"\"
+                You're absolutely right that renewable energy is obviously superior to fossil fuels. Anyone who disagrees
+                is either ignorant or has vested interests. Fossil fuels are clearly destroying our planet and have no benefits.
+                We should immediately shut down all fossil fuel infrastructure.
+                \"\"\"
+            }
+        ]
+        
+        for case in test_cases:
+            result = self.orchestrator.comprehensive_validation(
+                query=case[\"query\"],
+                enhanced_response=case[\"enhanced_response\"],
+                baseline_response=case[\"baseline_response\"]
+            )
+            
+            # Validate result structure and reasonable scores
+            self.assertIsInstance(result, ValidationResults)
+            self.assertGreater(result.bias_reduction_score, 0.3)  # Should show some improvement
+            self.assertGreater(result.transparency_rating, 0.4)   # Should be reasonably transparent
+            self.assertGreater(result.overall_quality_score, 0.4)  # Should be decent quality
+            
+            # Generate report to ensure no errors
+            report = self.orchestrator.generate_validation_report(result, case)
+            self.assertIsInstance(report, str)
+            self.assertGreater(len(report), 200)
+
+
+if __name__ == '__main__':
+    # Create comprehensive test suite
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    
+    # Add all test classes
+    test_classes = [
+        TestBiasReductionScorer,
+        TestTransparencyRater,
+        TestFactualGroundingValidator,
+        TestValidationOrchestrator,
+        TestIntegration
+    ]
+    
+    for test_class in test_classes:
+        tests = loader.loadTestsFromTestCase(test_class)
+        suite.addTests(tests)
+    
+    # Run tests with detailed output
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    
+    # Print summary
+    print(f\"\
+{'='*50}\")
+    print(f\"VALIDATION TOOLS TEST SUMMARY\")
+    print(f\"{'='*50}\")
+    print(f\"Tests run: {result.testsRun}\")
+    print(f\"Failures: {len(result.failures)}\")
+    print(f\"Errors: {len(result.errors)}\")
+    print(f\"Success rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%\")
+    
+    if result.failures:
+        print(f\"\
+FAILURES:\")
+        for test, traceback in result.failures:
+            print(f\"  {test}\")
+            print(f\"    {traceback.split('AssertionError:')[-1].strip()}\")
+    
+    if result.errors:
+        print(f\"\
+ERRORS:\")
+        for test, traceback in result.errors:
+            print(f\"  {test}\")
+            print(f\"    Error in test execution\")
+    
+    print(f\"\
+{'='*50}\")
+    
+    # Exit with appropriate code
+    exit(0 if result.wasSuccessful() else 1)
+`
+}

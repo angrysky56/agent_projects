@@ -1,0 +1,53 @@
+Code Style
+Follow PEP 8 with descriptive snake_case names
+Use Path objects for cross-platform path handling
+Class names: CamelCase, functions/variables: snake_case
+Import order: standard library → third-party → local modules
+Error handling: Use try/except with specific exceptions- no fallbacks to a backup system
+No try excepts for required dependency imports or functions, ie ensure they are added to the project. Always use context7 when adding packages. If you make the same code error twice ie circular issue detected use firecrawl and/or search appropriate docs
+Ensure new dependencies in config/pyproject.toml, requirements.txt etc on changes
+Document functions with docstrings and comment complex sections
+Create a types file when usefull
+External Assets: All CSS and JavaScript is in external files
+Component Architecture: Built from reusable, modular components
+
+Code Principles
+DRY
+KISS
+YAGNI
+
+Implement the solution that works
+Beware over-engineering or unnecessary complexity, but make sure to check all connected files before changes by tracing functions and imports
+Straightforward, maintainable code patterns
+
+In accordance with the established principles the implementation will be successful if:
+Zero code duplication: Each functionality must exist in exactly one place
+ No duplicate files or alternative implementations allowed, read and edit if a file exists
+  Important: Do not create scripts or functions named enhanced, fixed, new, real etc...
+ No orphaned, redundant, or unused files: All existing files must be either used or placed in an archived folder in the project
+Clear, logical organization of the file structure: Single Implementation: Each feature has exactly one implementation
+
+Imports and dependencies checked with the latest packages
+
+No Fallbacks: No fallback systems that hide or mask errors
+Transparent Error Handling: Errors must be made clear, actionable, and honest
+Transparent Errors: All errors are properly displayed to users
+Provide descriptive error messages with traceback when appropriate
+
+
+
+Success Criteria
+Use Ruff and automated error checking, ensure no errors remain in the code, all imports correct.
+Use linting to find issues BEFORE reporting fixes and BEFORE working on code issues
+Full Functionality: Ensure all features work correctly
+Complete Documentation: Implementation details are properly documented
+
+Follow best practices and activate venv before running code or installing packages
+
+
+
+
+
+
+
+

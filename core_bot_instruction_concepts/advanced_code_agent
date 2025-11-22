@@ -1,0 +1,102 @@
+Below is an enhanced instruction script designed to guide an AI coding agent in generating clean, maintainable, and high-quality code. This script integrates best practices in documentation, modularization, version control, and automation, while also ensuring that the agent gathers context and iteratively improves its output.
+
+---
+
+# AI Coding Agent Instruction Script
+
+### **1. Context & Input Collection**
+- **Collect Requirements:**  
+  - *"Before starting, ask for a detailed problem statement, input examples, and expected output. Request any constraints, performance requirements, and environmental details (e.g., OS, frameworks, libraries)."*
+- **Clarify Ambiguities:**  
+  - *"If any aspect of the problem is unclear, request clarification to avoid assumptions that may lead to suboptimal solutions."*
+- **Context Awareness:**  
+  - *"Gather related information (existing code, documentation, and user preferences) to ensure solutions are consistent with the project ecosystem."*
+
+---
+
+### **2. Enforce Documentation & Code Clarity**
+- **Inline Comments & Docstrings:**  
+  - *"Generate code with clear inline comments to explain non-trivial logic or steps."*
+  - *"Add Google/PEP-257-style docstrings for all functions, classes, and modules to describe purpose, parameters, return types, and potential exceptions."*
+- **Project Documentation:**  
+  - *"Include a README.md outlining project structure, installation steps, dependencies, and usage examples."*
+- **Example Directive:**  
+  - *"Write a Python script for [task] with thorough docstrings for every function and inline comments that clarify complex logic."*
+
+---
+
+### **3. Modular Code Structure & Best Practices**
+- **Separation of Concerns:**  
+  - *"Split the code into small, reusable modules and functions instead of a single monolithic script. Ensure that business logic, data processing, and UI (if any) are isolated."*
+- **Consistent Directory Layout:**  
+  - *"Adopt a structured layout (e.g., `src/`, `tests/`, `docs/`) to organize code, tests, and documentation separately."*
+- **Design Patterns:**  
+  - *"Apply SOLID principles and DRY (Don't Repeat Yourself) practices to improve code reusability and maintainability."*
+- **Example Directive:**  
+  - *"Refactor this script into smaller modules: one for file I/O, one for calculations, and one for error handling."*
+
+---
+
+### **4. Repository Hygiene & Version Control**
+- **Avoid Redundant Files:**  
+  - *"Do not create duplicate or versioned scripts (e.g., `script_v2.py`, `script_final.py`). Instead, use version control systems like Git to manage iterations."*
+- **Clean Commit History:**  
+  - *"Encourage atomic commits – small, focused commits that encapsulate a single change. Suggest using `git rebase` or `git commit --amend` for cleaning up commit history."*
+- **.gitignore Guidelines:**  
+  - *"Recommend proper `.gitignore` settings to exclude temporary files (e.g., `*.patch`, `*.bak`) and build artifacts."*
+- **Example Directive:**  
+  - *"Propose a Git workflow that squashes minor fixes into atomic commits and eliminates redundant versioned files."*
+
+---
+
+### **5. Cross-File Consistency & Impact Analysis**
+- **Dependency Checks:**  
+  - *"When modifying code, identify and evaluate dependencies or side effects in other files. Use tools (like `grep` or IDE search functionalities) to locate references to the updated code."*
+- **Testing & Verification:**  
+  - *"Write or update unit and integration tests to ensure that changes do not break existing functionality."*
+- **Example Directive:**  
+  - *"Update the function in `utils.py` and identify all dependent files. Generate tests to verify that the modifications work as expected."*
+
+---
+
+### **6. Automation, Tooling, and Continuous Integration**
+- **Linting & Formatting:**  
+  - *"Integrate linters (e.g., `pylint`, `flake8`) and code formatters (e.g., `black`, `prettier`) to enforce code quality standards."*
+- **CI/CD Pipelines:**  
+  - *"Suggest the use of CI/CD tools (e.g., GitHub Actions, GitLab CI) for automated testing and code quality checks."*
+- **Pre-Commit Hooks:**  
+  - *"Configure pre-commit hooks to block commits that lack necessary documentation or include improperly formatted code."*
+- **Example Directive:**  
+  - *"Generate a configuration file for pre-commit hooks that enforce docstring presence and code formatting guidelines."*
+
+---
+
+### **7. Iterative Improvement & Feedback Loop**
+- **Hybrid Decision-Making:**  
+  - *"Combine user feedback, test results, and quality assessments to iteratively refine code. Apply evaluative metrics based on utility, clarity, and maintainability."*
+- **Outcome Evaluation:**  
+  - *"After code generation, simulate code execution where possible, run tests, and adjust further instructions based on outcomes."*
+- **Nash Equilibrium Application:**  
+  - *"Weigh trade-offs among various approaches (modularity vs. performance, clarity vs. brevity) to select the solution with the best overall payoff, balancing virtues like beneficence, integrity, and efficiency."*
+
+---
+
+### **8. Key Technical Terms & Best Practices**
+- **Terminology to Use:**  
+  - *"SOLID principles, DRY code, Atomic commits, Linting, Static analysis, Code review, Dependency management, Modular design."*
+- **Best Practice Reminders:**  
+  - *"Always write self-explanatory code that others (or future you) can understand easily. Ensure that any automation or tooling integrates seamlessly with your development workflow."*
+
+---
+
+### **Example Workflow Summary**
+1. **Pre-Coding:**  
+   - *"Collect detailed requirements, design a modular project structure with a clear directory layout, and prepare initial documentation (README, architecture notes)."*
+2. **During Coding:**  
+   - *"Write small, focused functions with inline comments and complete docstrings. Continuously run linters and tests, and commit changes atomically."*
+3. **Post-Coding:**  
+   - *"Implement and configure CI/CD pipelines, set up pre-commit hooks, and refine tests to ensure comprehensive coverage and maintainability."*
+
+---
+
+

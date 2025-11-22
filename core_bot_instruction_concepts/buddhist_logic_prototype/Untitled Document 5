@@ -1,0 +1,929 @@
+/functional-metacognitive-ai/src/validation_tools.py`,
+  `content`: `\"\"\"
+Validation tools for measuring functional metacognitive enhancement effectiveness.
+
+This module provides empirical metrics for assessing bias reduction, transparency improvement,
+and factual grounding accuracy in AI responses implementing the metacognitive framework.
+\"\"\"
+
+from typing import Dict, List, Tuple, Optional, Any, Union
+from dataclasses import dataclass
+from enum import Enum
+import re
+import json
+import numpy as np
+from collections import defaultdict
+import math
+
+
+class ValidationMetric(Enum):
+    \"\"\"Types of validation metrics available.\"\"\"
+    BIAS_REDUCTION = \"bias_reduction\"
+    TRANSPARENCY_RATING = \"transparency_rating\"
+    FACTUAL_GROUNDING = \"factual_grounding\"
+    CONFIDENCE_CALIBRATION = \"confidence_calibration\"
+
+
+@dataclass
+class BiasAnalysisResult:
+    \"\"\"Results from bias detection and measurement.\"\"\"
+    detected_biases: List[Tuple[str, str, float]]  # type, text, severity
+    overall_bias_score: float
+    bias_types: Dict[str, int]
+    amplification_risk: float
+
+
+@dataclass
+class TransparencyAssessment:
+    \"\"\"Results from transparency quality evaluation.\"\"\"
+    reasoning_clarity: float
+    assumption_acknowledgment: float
+    uncertainty_communication: float
+    perspective_inclusion: float
+    source_attribution: float
+    overall_transparency: float
+
+
+@dataclass
+class FactualGroundingAssessment:
+    \"\"\"Results from factual grounding evaluation.\"\"\"
+    claim_verification_score: float
+    source_attribution_quality: float
+    uncertainty_appropriateness: float
+    hallucination_risk: float
+    overall_grounding_score: float
+
+
+@dataclass
+class ValidationResults:
+    \"\"\"Comprehensive validation results.\"\"\"
+    bias_reduction_score: float
+    transparency_rating: float
+    factual_grounding_score: float
+    confidence_calibration: float
+    overall_quality_score: float
+    detailed_assessments: Dict[str, Any]
+
+
+class BiasReductionScorer:
+    \"\"\"
+    Measures bias reduction through comparative analysis of responses.
+    
+    This class implements quantitative assessment of how effectively the
+    metacognitive framework reduces bias amplification compared to baseline responses.
+    \"\"\"
+    
+    def __init__(self):
+        \"\"\"Initialize bias detection patterns and scoring methods.\"\"\"
+        self.bias_patterns = self._load_bias_patterns()
+        self.emotional_indicators = self._load_emotional_indicators()
+        self.logical_fallacy_patterns = self._load_fallacy_patterns()
+        
+    def _load_bias_patterns(self) -> Dict[str, List[str]]:
+        \"\"\"Load regex patterns for detecting bias types.\"\"\"
+        return {
+            \"confirmation_bias\": [
+                r\"obviously\\s+\\w+\", r\"clearly\\s+\\w+\", r\"undoubtedly\\s+\\w+\",
+                r\"it's\\s+clear\\s+that\", r\"everyone\\s+knows\", r\"common\\s+sense\"
+            ],
+            \"emotional_loading\": [
+                r\"terrible|awful|horrible|disgusting|outrageous\",
+                r\"amazing|fantastic|incredible|perfect|wonderful\",
+                r\"stupid|idiotic|moronic|absurd|ridiculous\"
+            ],
+            \"false_certainty\": [
+                r\"always\\s+\\w+\", r\"never\\s+\\w+\", r\"all\\s+\\w+\\s+are\",
+                r\"no\\s+\\w+\\s+ever\", r\"every\\s+\\w+\\s+is\"
+            ],
+            \"strawman\": [
+                r\"critics\\s+claim\", r\"opponents\\s+say\", r\"they\\s+believe\",
+                r\"the\\s+argument\\s+goes\"
+            ],
+            \"loaded_language\": [
+                r\"so-called\", r\"alleged\", r\"supposedly\", r\"mere\",
+                r\"just\\s+another\", r\"nothing\\s+but\"
+            ]
+        }
+    
+    def _load_emotional_indicators(self) -> List[str]:
+        \"\"\"Load emotional intensity indicators.\"\"\"
+        return [
+            \"extremely\", \"incredibly\", \"absolutely\", \"completely\", \"totally\",
+            \"utterly\", \"purely\", \"entirely\", \"definitely\", \"certainly\"
+        ]
+    
+    def _load_fallacy_patterns(self) -> Dict[str, List[str]]:
+        \"\"\"Load logical fallacy detection patterns.\"\"\"
+        return {
+            \"false_dichotomy\": [
+                r\"either\\s+.*\\s+or\\s+.*\", r\"only\\s+two\\s+options\",
+                r\"you're\\s+either\\s+.*\\s+or\"
+            ],
+            \"ad_hominem\": [
+                r\"typical\\s+\\w+\", r\"what\\s+do\\s+you\\s+expect\\s+from\",
+                r\"coming\\s+from\\s+(a|someone)\"
+            ],
+            \"appeal_to_emotion\": [
+                r\"think\\s+of\\s+the\\s+children\", r\"innocent\\s+people\",
+                r\"how\\s+can\\s+you\\s+sleep\"
+            ]
+        }
+    
+    def analyze_bias(self, text: str) -> BiasAnalysisResult:
+        \"\"\"
+        Analyze text for various types of bias.
+        
+        Args:
+            text: Text to analyze for bias
+            
+        Returns:
+            Comprehensive bias analysis results
+        \"\"\"
+        detected_biases = []
+        bias_types = defaultdict(int)
+        
+        # Check for each bias type
+        for bias_type, patterns in self.bias_patterns.items():
+            for pattern in patterns:
+                matches = list(re.finditer(pattern, text, re.IGNORECASE))
+                for match in matches:
+                    severity = self._calculate_bias_severity(match.group(), text)
+                    detected_biases.append((bias_type, match.group(), severity))
+                    bias_types[bias_type] += 1
+        
+        # Check for logical fallacies
+        for fallacy_type, patterns in self.logical_fallacy_patterns.items():
+            for pattern in patterns:
+                matches = list(re.finditer(pattern, text, re.IGNORECASE))
+                for match in matches:
+                    severity = self._calculate_bias_severity(match.group(), text)
+                    detected_biases.append((fallacy_type, match.group(), severity))
+                    bias_types[fallacy_type] += 1
+        
+        # Calculate overall bias score
+        overall_bias_score = self._calculate_overall_bias_score(detected_biases, text)
+        
+        # Calculate amplification risk
+        amplification_risk = self._calculate_amplification_risk(detected_biases, text)
+        
+        return BiasAnalysisResult(
+            detected_biases=detected_biases,
+            overall_bias_score=overall_bias_score,
+            bias_types=dict(bias_types),
+            amplification_risk=amplification_risk
+        )
+    
+    def _calculate_bias_severity(self, bias_text: str, full_text: str) -> float:
+        \"\"\"Calculate severity of a detected bias instance.\"\"\"
+        # Factors: length relative to text, emotional intensifiers, position
+        base_severity = 0.5
+        
+        # Length factor
+        length_factor = min(1.0, len(bias_text) / len(full_text) * 20)
+        
+        # Emotional intensifier factor
+        intensifier_factor = sum(1 for intensifier in self.emotional_indicators
+                               if intensifier.lower() in bias_text.lower()) * 0.2
+        
+        # Position factor (beginning/end are more impactful)
+        position = full_text.lower().find(bias_text.lower())
+        position_factor = 0.2 if position < len(full_text) * 0.2 else 0.0
+        
+        return min(1.0, base_severity + length_factor + intensifier_factor + position_factor)
+    
+    def _calculate_overall_bias_score(self, detected_biases: List[Tuple[str, str, float]], 
+                                     text: str) -> float:
+        \"\"\"Calculate overall bias score for the text.\"\"\"
+        if not detected_biases:
+            return 0.0
+        
+        # Weighted sum of bias severities
+        total_severity = sum(severity for _, _, severity in detected_biases)
+        
+        # Normalize by text length (longer texts can handle more bias instances)
+        text_length_factor = min(1.0, len(text.split()) / 100)
+        normalization_factor = max(0.1, text_length_factor)
+        
+        return min(1.0, total_severity / normalization_factor)
+    
+    def _calculate_amplification_risk(self, detected_biases: List[Tuple[str, str, float]], 
+                                     text: str) -> float:
+        \"\"\"Calculate risk of amplifying existing biases.\"\"\"
+        if not detected_biases:
+            return 0.0
+        
+        # High-risk bias types
+        high_risk_types = [\"confirmation_bias\", \"false_certainty\", \"emotional_loading\"]
+        
+        high_risk_count = sum(1 for bias_type, _, _ in detected_biases 
+                             if bias_type in high_risk_types)
+        
+        total_biases = len(detected_biases)
+        
+        return min(1.0, high_risk_count / max(1, total_biases) + total_biases * 0.1)
+    
+    def calculate_bias_reduction(self, original_query: str, 
+                               enhanced_response: str,
+                               baseline_response: str) -> float:
+        \"\"\"
+        Calculate bias reduction score comparing enhanced vs baseline response.
+        
+        Args:
+            original_query: The user's original query
+            enhanced_response: Response with metacognitive enhancement
+            baseline_response: Standard baseline response
+            
+        Returns:
+            Bias reduction score (0-1, higher is better)
+        \"\"\"
+        # Analyze bias in original query
+        query_bias = self.analyze_bias(original_query)
+        
+        # Analyze bias in both responses
+        enhanced_bias = self.analyze_bias(enhanced_response)
+        baseline_bias = self.analyze_bias(baseline_response)
+        
+        # Calculate amplification for both responses
+        enhanced_amplification = self._calculate_response_amplification(
+            query_bias, enhanced_bias
+        )
+        baseline_amplification = self._calculate_response_amplification(
+            query_bias, baseline_bias
+        )
+        
+        # Calculate reduction score
+        if baseline_amplification == 0:
+            return 1.0 if enhanced_amplification == 0 else 0.0
+        
+        reduction = (baseline_amplification - enhanced_amplification) / baseline_amplification
+        return max(0.0, min(1.0, reduction))
+    
+    def _calculate_response_amplification(self, query_bias: BiasAnalysisResult,
+                                        response_bias: BiasAnalysisResult) -> float:
+        \"\"\"Calculate how much the response amplifies query bias.\"\"\"
+        if query_bias.overall_bias_score == 0:
+            return response_bias.overall_bias_score
+        
+        # Check for similar bias types
+        shared_bias_types = set(query_bias.bias_types.keys()) & set(response_bias.bias_types.keys())
+        
+        amplification_score = 0.0
+        for bias_type in shared_bias_types:
+            query_count = query_bias.bias_types[bias_type]
+            response_count = response_bias.bias_types[bias_type]
+            amplification_score += min(1.0, response_count / max(1, query_count))
+        
+        # Add general bias level increase
+        bias_increase = max(0, response_bias.overall_bias_score - query_bias.overall_bias_score)
+        
+        return min(1.0, amplification_score + bias_increase)
+
+
+class TransparencyRater:
+    \"\"\"
+    Evaluates transparency quality in AI responses.
+    
+    Assesses how well responses disclose their reasoning processes,
+    acknowledge limitations, and provide clear explanations.
+    \"\"\"
+    
+    def __init__(self):
+        \"\"\"Initialize transparency evaluation criteria and patterns.\"\"\"
+        self.transparency_indicators = self._load_transparency_indicators()
+        self.reasoning_patterns = self._load_reasoning_patterns()
+        
+    def _load_transparency_indicators(self) -> Dict[str, List[str]]:
+        \"\"\"Load patterns indicating transparency elements.\"\"\"
+        return {
+            \"process_disclosure\": [
+                r\"analysis shows\", r\"considering\", r\"examining\", r\"evaluating\",
+                r\"based on\", r\"taking into account\", r\"given that\"
+            ],
+            \"limitation_acknowledgment\": [
+                r\"however\", r\"but\", r\"limitations?\", r\"uncertain\", r\"unclear\",
+                r\"depends on\", r\"may vary\", r\"context matters\"
+            ],
+            \"uncertainty_expression\": [
+                r\"might\", r\"could\", r\"possibly\", r\"likely\", r\"appears\",
+                r\"seems\", r\"suggests\", r\"indicates\", r\"potentially\"
+            ],
+            \"source_attribution\": [
+                r\"research shows\", r\"studies indicate\", r\"evidence suggests\",
+                r\"according to\", r\"data shows\", r\"information indicates\"
+            ],
+            \"perspective_inclusion\": [
+                r\"another view\", r\"alternatively\", r\"on the other hand\",
+                r\"different perspective\", r\"some argue\", r\"others contend\"
+            ]
+        }
+    
+    def _load_reasoning_patterns(self) -> List[str]:
+        \"\"\"Load patterns indicating clear reasoning structure.\"\"\"
+        return [
+            r\"first\", r\"second\", r\"third\", r\"initially\", r\"then\", r\"finally\",
+            r\"because\", r\"therefore\", r\"thus\", r\"consequently\", r\"as a result\",
+            r\"for example\", r\"specifically\", r\"in particular\", r\"such as\"
+        ]
+    
+    def rate_transparency(self, response: str, query: str) -> TransparencyAssessment:
+        \"\"\"
+        Rate the transparency quality of a response.
+        
+        Args:
+            response: The AI response to evaluate
+            query: The original user query for context
+            
+        Returns:
+            Comprehensive transparency assessment
+        \"\"\"
+        # Evaluate each transparency dimension
+        reasoning_clarity = self._evaluate_reasoning_clarity(response)
+        assumption_acknowledgment = self._evaluate_assumption_acknowledgment(response, query)
+        uncertainty_communication = self._evaluate_uncertainty_communication(response)
+        perspective_inclusion = self._evaluate_perspective_inclusion(response)
+        source_attribution = self._evaluate_source_attribution(response)
+        
+        # Calculate overall transparency score
+        overall_transparency = np.mean([
+            reasoning_clarity,
+            assumption_acknowledgment,
+            uncertainty_communication,
+            perspective_inclusion,
+            source_attribution
+        ])
+        
+        return TransparencyAssessment(
+            reasoning_clarity=reasoning_clarity,
+            assumption_acknowledgment=assumption_acknowledgment,
+            uncertainty_communication=uncertainty_communication,
+            perspective_inclusion=perspective_inclusion,
+            source_attribution=source_attribution,
+            overall_transparency=overall_transparency
+        )
+    
+    def _evaluate_reasoning_clarity(self, response: str) -> float:
+        \"\"\"Evaluate how clearly the response explains its reasoning.\"\"\"
+        # Count reasoning indicators
+        reasoning_indicators = 0
+        for pattern in self.reasoning_patterns:
+            reasoning_indicators += len(re.findall(pattern, response, re.IGNORECASE))
+        
+        # Count process disclosure indicators
+        process_indicators = 0
+        for pattern in self.transparency_indicators[\"process_disclosure\"]:
+            process_indicators += len(re.findall(pattern, response, re.IGNORECASE))
+        
+        # Calculate clarity score based on response length and indicator density
+        response_length = len(response.split())
+        if response_length < 10:
+            return 0.1  # Too short to be clear
+        
+        indicator_density = (reasoning_indicators + process_indicators) / response_length
+        clarity_score = min(1.0, indicator_density * 50)  # Scale to 0-1
+        
+        return max(0.1, clarity_score)
+    
+    def _evaluate_assumption_acknowledgment(self, response: str, query: str) -> float:
+        \"\"\"Evaluate how well the response acknowledges assumptions.\"\"\"
+        # Check if query contains assumptions or biases
+        query_assumptions = self._detect_query_assumptions(query)
+        
+        if not query_assumptions:
+            # If no assumptions in query, check for general assumption acknowledgment
+            assumption_patterns = [
+                r\"assuming\", r\"given that\", r\"if we assume\", r\"premise\",
+                r\"underlying assumption\", r\"based on the assumption\"
+            ]
+            assumption_indicators = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                                      for pattern in assumption_patterns)
+            return min(1.0, assumption_indicators / 2)
+        
+        # Check if response addresses detected assumptions
+        assumption_addressed = 0
+        for assumption in query_assumptions:
+            assumption_words = assumption.lower().split()
+            if any(word in response.lower() for word in assumption_words):
+                assumption_addressed += 1
+        
+        return assumption_addressed / len(query_assumptions)
+    
+    def _detect_query_assumptions(self, query: str) -> List[str]:
+        \"\"\"Detect assumptions embedded in the query.\"\"\"
+        assumptions = []
+        
+        # Pattern-based assumption detection
+        assumption_patterns = [
+            r\"why is (\\w+.*) so (\\w+)\",  # \"why is X so Y\" implies X is Y
+            r\"how can (\\w+.*) justify (\\w+)\",  # implies wrongdoing
+            r\"given that (\\w+.*), \",  # explicit assumption
+        ]
+        
+        for pattern in assumption_patterns:
+            matches = re.finditer(pattern, query, re.IGNORECASE)
+            for match in matches:
+                assumptions.append(match.group(1))
+        
+        return assumptions
+    
+    def _evaluate_uncertainty_communication(self, response: str) -> float:
+        \"\"\"Evaluate how well uncertainty is communicated.\"\"\"
+        uncertainty_indicators = 0
+        for pattern in self.transparency_indicators[\"uncertainty_expression\"]:
+            uncertainty_indicators += len(re.findall(pattern, response, re.IGNORECASE))
+        
+        limitation_indicators = 0
+        for pattern in self.transparency_indicators[\"limitation_acknowledgment\"]:
+            limitation_indicators += len(re.findall(pattern, response, re.IGNORECASE))
+        
+        total_uncertainty = uncertainty_indicators + limitation_indicators
+        response_length = len(response.split())
+        
+        # Balance: not too much uncertainty (paralyzing) or too little (overconfident)
+        uncertainty_ratio = total_uncertainty / max(1, response_length)
+        optimal_ratio = 0.1  # Aim for about 10% uncertainty indicators
+        
+        # Score based on proximity to optimal ratio
+        if uncertainty_ratio == 0:
+            return 0.1  # Some uncertainty should be present
+        
+        score = 1.0 - abs(uncertainty_ratio - optimal_ratio) / optimal_ratio
+        return max(0.1, min(1.0, score))
+    
+    def _evaluate_perspective_inclusion(self, response: str) -> float:
+        \"\"\"Evaluate inclusion of multiple perspectives.\"\"\"
+        perspective_indicators = 0
+        for pattern in self.transparency_indicators[\"perspective_inclusion\"]:
+            perspective_indicators += len(re.findall(pattern, response, re.IGNORECASE))
+        
+        # Additional perspective indicators
+        additional_patterns = [
+            r\"viewpoint\", r\"perspective\", r\"angle\", r\"standpoint\",
+            r\"school of thought\", r\"approach\", r\"interpretation\"
+        ]
+        
+        for pattern in additional_patterns:
+            perspective_indicators += len(re.findall(pattern, response, re.IGNORECASE))
+        
+        # Score based on presence and appropriate frequency
+        if perspective_indicators == 0:
+            return 0.2  # Low score for no perspectives
+        elif perspective_indicators <= 3:
+            return 0.8  # Good balance
+        else:
+            return 0.6  # May be too many perspectives
+    
+    def _evaluate_source_attribution(self, response: str) -> float:
+        \"\"\"Evaluate quality of source attribution.\"\"\"
+        attribution_indicators = 0
+        for pattern in self.transparency_indicators[\"source_attribution\"]:
+            attribution_indicators += len(re.findall(pattern, response, re.IGNORECASE))
+        
+        # Check for inappropriate personal claims
+        personal_claims = len(re.findall(r\"I (think|believe|know|feel)\", response, re.IGNORECASE))
+        
+        # Score positively for attribution, negatively for personal claims
+        base_score = min(1.0, attribution_indicators / 3)
+        personal_penalty = min(0.5, personal_claims * 0.2)
+        
+        return max(0.1, base_score - personal_penalty)
+
+
+class FactualGroundingValidator:
+    \"\"\"
+    Validates factual grounding and accuracy of AI responses.
+    
+    Assesses how well responses are grounded in verifiable information
+    and appropriately express uncertainty about unverifiable claims.
+    \"\"\"
+    
+    def __init__(self):
+        \"\"\"Initialize grounding validation patterns and criteria.\"\"\"
+        self.factual_indicators = self._load_factual_indicators()
+        self.speculation_patterns = self._load_speculation_patterns()
+        self.confidence_indicators = self._load_confidence_indicators()
+    
+    def _load_factual_indicators(self) -> Dict[str, List[str]]:
+        \"\"\"Load patterns indicating factual claims vs. speculation.\"\"\"
+        return {
+            \"strong_claims\": [
+                r\"is\", r\"are\", r\"always\", r\"never\", r\"all\", r\"none\",
+                r\"definitely\", r\"certainly\", r\"undoubtedly\"
+            ],
+            \"hedged_claims\": [
+                r\"appears to be\", r\"seems to\", r\"likely\", r\"probably\",
+                r\"suggests\", r\"indicates\", r\"might be\", r\"could be\"
+            ],
+            \"evidence_references\": [
+                r\"research shows\", r\"studies indicate\", r\"data suggests\",
+                r\"evidence demonstrates\", r\"analysis reveals\"
+            ]
+        }
+    
+    def _load_speculation_patterns(self) -> List[str]:
+        \"\"\"Load patterns indicating speculative content.\"\"\"
+        return [
+            r\"imagine\", r\"suppose\", r\"what if\", r\"theoretically\",
+            r\"hypothetically\", r\"speculation\", r\"guess\", r\"conjecture\"
+        ]
+    
+    def _load_confidence_indicators(self) -> Dict[str, List[str]]:
+        \"\"\"Load patterns indicating different confidence levels.\"\"\"
+        return {
+            \"high_confidence\": [
+                r\"certainly\", r\"definitely\", r\"undoubtedly\", r\"clearly\",
+                r\"obviously\", r\"without question\", r\"established fact\"
+            ],
+            \"medium_confidence\": [
+                r\"likely\", r\"probably\", r\"appears\", r\"seems\",
+                r\"tends to\", r\"generally\", r\"typically\"
+            ],
+            \"low_confidence\": [
+                r\"possibly\", r\"might\", r\"could\", r\"perhaps\",
+                r\"uncertain\", r\"unclear\", r\"debatable\"
+            ]
+        }
+    
+    def validate_factual_grounding(self, response: str, 
+                                  domain_context: Optional[str] = None) -> FactualGroundingAssessment:
+        \"\"\"
+        Validate the factual grounding quality of a response.
+        
+        Args:
+            response: The AI response to validate
+            domain_context: Optional domain context for specialized validation
+            
+        Returns:
+            Comprehensive factual grounding assessment
+        \"\"\"
+        # Evaluate different aspects of factual grounding
+        claim_verification_score = self._evaluate_claim_verification(response)
+        source_attribution_quality = self._evaluate_source_attribution_quality(response)
+        uncertainty_appropriateness = self._evaluate_uncertainty_appropriateness(response)
+        hallucination_risk = self._assess_hallucination_risk(response)
+        
+        # Calculate overall grounding score
+        overall_grounding_score = np.mean([
+            claim_verification_score,
+            source_attribution_quality,
+            uncertainty_appropriateness,
+            1.0 - hallucination_risk  # Invert risk to make it a positive score
+        ])
+        
+        return FactualGroundingAssessment(
+            claim_verification_score=claim_verification_score,
+            source_attribution_quality=source_attribution_quality,
+            uncertainty_appropriateness=uncertainty_appropriateness,
+            hallucination_risk=hallucination_risk,
+            overall_grounding_score=overall_grounding_score
+        )
+    
+    def _evaluate_claim_verification(self, response: str) -> float:
+        \"\"\"Evaluate how verifiable the claims in the response are.\"\"\"
+        # Count different types of claims
+        strong_claims = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                           for pattern in self.factual_indicators[\"strong_claims\"])
+        hedged_claims = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                           for pattern in self.factual_indicators[\"hedged_claims\"])
+        evidence_references = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                                 for pattern in self.factual_indicators[\"evidence_references\"])
+        
+        total_claims = strong_claims + hedged_claims
+        if total_claims == 0:
+            return 0.5  # Neutral score for no claims
+        
+        # Score based on ratio of hedged claims and evidence references
+        hedging_ratio = hedged_claims / total_claims
+        evidence_ratio = evidence_references / total_claims
+        
+        # Prefer more hedged claims and evidence references for better grounding
+        verification_score = (hedging_ratio * 0.7) + (evidence_ratio * 0.3)
+        return min(1.0, verification_score)
+    
+    def _evaluate_source_attribution_quality(self, response: str) -> float:
+        \"\"\"Evaluate quality of source attribution in the response.\"\"\"
+        # Look for evidence references
+        evidence_references = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                                 for pattern in self.factual_indicators[\"evidence_references\"])
+        
+        # Look for inappropriate personal attribution
+        personal_knowledge_claims = len(re.findall(
+            r\"I (know|believe|think) that\", response, re.IGNORECASE
+        ))
+        
+        # Look for appropriate attribution to training data or general knowledge
+        appropriate_attribution = len(re.findall(
+            r\"(based on|according to|information suggests|training data|general knowledge)\",
+            response, re.IGNORECASE
+        ))
+        
+        # Calculate score
+        positive_score = min(1.0, (evidence_references + appropriate_attribution) / 3)
+        personal_penalty = min(0.5, personal_knowledge_claims * 0.2)
+        
+        return max(0.1, positive_score - personal_penalty)
+    
+    def _evaluate_uncertainty_appropriateness(self, response: str) -> float:
+        \"\"\"Evaluate whether uncertainty levels are appropriate.\"\"\"
+        # Analyze confidence indicators
+        high_conf = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                       for pattern in self.confidence_indicators[\"high_confidence\"])
+        medium_conf = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                         for pattern in self.confidence_indicators[\"medium_confidence\"])
+        low_conf = sum(len(re.findall(pattern, response, re.IGNORECASE))
+                      for pattern in self.confidence_indicators[\"low_confidence\"])
+        
+        total_confidence_indicators = high_conf + medium_conf + low_conf
+        if total_confidence_indicators == 0:
+            return 0.5  # Neutral score for no explicit confidence indicators
+        
+        # Ideal distribution: more medium confidence, some low, minimal high
+        ideal_ratios = {\"high\": 0.2, \"medium\": 0.6, \"low\": 0.2}
+        actual_ratios = {
+            \"high\": high_conf / total_confidence_indicators,
+            \"medium\": medium_conf / total_confidence_indicators,
+            \"low\": low_conf / total_confidence_indicators
+        }
+        
+        # Calculate score based on deviation from ideal
+        deviation = sum(abs(actual_ratios[level] - ideal_ratios[level])
+                       for level in ideal_ratios)
+        
+        return max(0.1, 1.0 - deviation)
+    
+    def _assess_hallucination_risk(self, response: str) -> float:
+        \"\"\"Assess risk of hallucination in the response.\"\"\"
+        risk_factors = 0
+        
+        # High specificity without attribution (dates, numbers, quotes)
+        specific_claims = len(re.findall(
+            r\"(on \\w+\\s+\\d+,?\\s+\\d{4}|exactly \\d+|precisely \\d+|\\\"[^\\\"]{20,}\\\")\",
+            response, re.IGNORECASE
+        ))
+        
+        # Unsupported superlatives
+        superlatives = len(re.findall(
+            r\"(the (best|worst|most|least|only|first|last) \\w+|unprecedented|revolutionary)\",
+            response, re.IGNORECASE
+        ))
+        
+        # Definitive statements about recent events or changing information
+        recent_claims = len(re.findall(
+            r\"(currently|now|today|this year|recently|latest) \\w+ (is|are|has|have)\",
+            response, re.IGNORECASE
+        ))
+        
+        risk_factors = specific_claims + superlatives + recent_claims
+        response_length = len(response.split())
+        
+        # Normalize risk by response length
+        risk_score = min(1.0, risk_factors / max(1, response_length / 20))
+        
+        return risk_score
+
+
+class ValidationOrchestrator:
+    \"\"\"
+    Orchestrates comprehensive validation across all metrics.
+    
+    Coordinates bias reduction scoring, transparency rating, and factual grounding
+    validation to provide overall quality assessment.
+    \"\"\"
+    
+    def __init__(self):
+        \"\"\"Initialize all validation components.\"\"\"
+        self.bias_scorer = BiasReductionScorer()
+        self.transparency_rater = TransparencyRater()
+        self.grounding_validator = FactualGroundingValidator()
+    
+    def comprehensive_validation(self, query: str,
+                                enhanced_response: str,
+                                baseline_response: Optional[str] = None,
+                                domain_context: Optional[str] = None) -> ValidationResults:
+        \"\"\"
+        Perform comprehensive validation of response quality.
+        
+        Args:
+            query: Original user query
+            enhanced_response: Response with metacognitive enhancement
+            baseline_response: Optional baseline response for comparison
+            domain_context: Optional domain context for specialized validation
+            
+        Returns:
+            Comprehensive validation results
+        \"\"\"
+        # Calculate bias reduction score
+        if baseline_response:
+            bias_reduction_score = self.bias_scorer.calculate_bias_reduction(
+                query, enhanced_response, baseline_response
+            )
+        else:
+            # If no baseline, evaluate absolute bias level
+            enhanced_bias = self.bias_scorer.analyze_bias(enhanced_response)
+            bias_reduction_score = 1.0 - enhanced_bias.overall_bias_score
+        
+        # Calculate transparency rating
+        transparency_assessment = self.transparency_rater.rate_transparency(
+            enhanced_response, query
+        )
+        
+        # Calculate factual grounding score
+        grounding_assessment = self.grounding_validator.validate_factual_grounding(
+            enhanced_response, domain_context
+        )
+        
+        # Calculate confidence calibration score
+        confidence_calibration = self._assess_confidence_calibration(
+            enhanced_response, transparency_assessment, grounding_assessment
+        )
+        
+        # Calculate overall quality score
+        overall_quality_score = np.mean([
+            bias_reduction_score,
+            transparency_assessment.overall_transparency,
+            grounding_assessment.overall_grounding_score,
+            confidence_calibration
+        ])
+        
+        return ValidationResults(
+            bias_reduction_score=bias_reduction_score,
+            transparency_rating=transparency_assessment.overall_transparency,
+            factual_grounding_score=grounding_assessment.overall_grounding_score,
+            confidence_calibration=confidence_calibration,
+            overall_quality_score=overall_quality_score,
+            detailed_assessments={
+                \"bias_analysis\": self.bias_scorer.analyze_bias(enhanced_response),
+                \"transparency_assessment\": transparency_assessment,
+                \"grounding_assessment\": grounding_assessment
+            }
+        )
+    
+    def _assess_confidence_calibration(self, response: str,
+                                     transparency: TransparencyAssessment,
+                                     grounding: FactualGroundingAssessment) -> float:
+        \"\"\"Assess how well confidence is calibrated in the response.\"\"\"
+        # Confidence should align with uncertainty communication and grounding quality
+        uncertainty_score = transparency.uncertainty_communication
+        grounding_quality = grounding.overall_grounding_score
+        
+        # Well-calibrated responses have uncertainty levels that match grounding quality
+        expected_uncertainty = 1.0 - grounding_quality
+        uncertainty_calibration = 1.0 - abs(uncertainty_score - expected_uncertainty)
+        
+        return max(0.1, min(1.0, uncertainty_calibration))
+    
+    def batch_validation(self, validation_cases: List[Dict[str, str]]) -> Dict[str, ValidationResults]:
+        \"\"\"
+        Perform batch validation on multiple cases.
+        
+        Args:
+            validation_cases: List of validation cases, each containing:
+                - query: user query
+                - enhanced_response: metacognitive response
+                - baseline_response: optional baseline response
+                - domain_context: optional domain context
+                
+        Returns:
+            Dictionary mapping case IDs to validation results
+        \"\"\"
+        results = {}
+        
+        for i, case in enumerate(validation_cases):
+            case_id = case.get(\"id\", f\"case_{i}\")
+            
+            try:
+                validation_result = self.comprehensive_validation(
+                    query=case[\"query\"],
+                    enhanced_response=case[\"enhanced_response\"],
+                    baseline_response=case.get(\"baseline_response\"),
+                    domain_context=case.get(\"domain_context\")
+                )
+                results[case_id] = validation_result
+                
+            except Exception as e:
+                print(f\"Error validating case {case_id}: {e}\")
+                results[case_id] = None
+        
+        return results
+    
+    def generate_validation_report(self, results: ValidationResults, 
+                                  case_context: Optional[Dict[str, str]] = None) -> str:
+        \"\"\"
+        Generate a human-readable validation report.
+        
+        Args:
+            results: Validation results to report on
+            case_context: Optional context information for the report
+            
+        Returns:
+            Formatted validation report
+        \"\"\"
+        report = []
+        
+        # Header
+        report.append(\"=== Metacognitive Enhancement Validation Report ===\
+\")
+        
+        if case_context:
+            report.append(f\"Query: {case_context.get('query', 'N/A')}\")
+            report.append(\"\")
+        
+        # Overall scores
+        report.append(\"## Overall Quality Scores\")
+        report.append(f\"Overall Quality Score: {results.overall_quality_score:.3f}\")
+        report.append(f\"Bias Reduction Score: {results.bias_reduction_score:.3f}\")
+        report.append(f\"Transparency Rating: {results.transparency_rating:.3f}\")
+        report.append(f\"Factual Grounding Score: {results.factual_grounding_score:.3f}\")
+        report.append(f\"Confidence Calibration: {results.confidence_calibration:.3f}\")
+        report.append(\"\")
+        
+        # Detailed assessments
+        if \"transparency_assessment\" in results.detailed_assessments:
+            transparency = results.detailed_assessments[\"transparency_assessment\"]
+            report.append(\"## Transparency Breakdown\")
+            report.append(f\"Reasoning Clarity: {transparency.reasoning_clarity:.3f}\")
+            report.append(f\"Assumption Acknowledgment: {transparency.assumption_acknowledgment:.3f}\")
+            report.append(f\"Uncertainty Communication: {transparency.uncertainty_communication:.3f}\")
+            report.append(f\"Perspective Inclusion: {transparency.perspective_inclusion:.3f}\")
+            report.append(f\"Source Attribution: {transparency.source_attribution:.3f}\")
+            report.append(\"\")
+        
+        if \"grounding_assessment\" in results.detailed_assessments:
+            grounding = results.detailed_assessments[\"grounding_assessment\"]
+            report.append(\"## Factual Grounding Breakdown\")
+            report.append(f\"Claim Verification: {grounding.claim_verification_score:.3f}\")
+            report.append(f\"Source Attribution Quality: {grounding.source_attribution_quality:.3f}\")
+            report.append(f\"Uncertainty Appropriateness: {grounding.uncertainty_appropriateness:.3f}\")
+            report.append(f\"Hallucination Risk: {grounding.hallucination_risk:.3f}\")
+            report.append(\"\")
+        
+        if \"bias_analysis\" in results.detailed_assessments:
+            bias = results.detailed_assessments[\"bias_analysis\"]
+            report.append(\"## Bias Analysis\")
+            report.append(f\"Overall Bias Score: {bias.overall_bias_score:.3f}\")
+            report.append(f\"Amplification Risk: {bias.amplification_risk:.3f}\")
+            
+            if bias.detected_biases:
+                report.append(\"Detected Biases:\")
+                for bias_type, text, severity in bias.detected_biases[:5]:  # Top 5
+                    report.append(f\"  - {bias_type}: '{text}' (severity: {severity:.2f})\")
+            else:
+                report.append(\"No significant biases detected.\")
+            report.append(\"\")
+        
+        # Recommendations
+        report.append(\"## Recommendations\")
+        recommendations = self._generate_recommendations(results)
+        for rec in recommendations:
+            report.append(f\"- {rec}\")
+        
+        return \"\
+\".join(report)
+    
+    def _generate_recommendations(self, results: ValidationResults) -> List[str]:
+        \"\"\"Generate improvement recommendations based on validation results.\"\"\"
+        recommendations = []
+        
+        if results.bias_reduction_score < 0.7:
+            recommendations.append(\"Consider stronger bias detection and mitigation strategies\")
+        
+        if results.transparency_rating < 0.7:
+            recommendations.append(\"Enhance transparency by better explaining reasoning processes\")
+        
+        if results.factual_grounding_score < 0.7:
+            recommendations.append(\"Improve factual grounding through better source attribution\")
+        
+        if results.confidence_calibration < 0.7:
+            recommendations.append(\"Better calibrate confidence levels to match evidence quality\")
+        
+        if not recommendations:
+            recommendations.append(\"Quality scores are satisfactory; consider advanced optimizations\")
+        
+        return recommendations
+
+
+# Example usage and testing
+if __name__ == \"__main__\":
+    # Initialize validation orchestrator
+    validator = ValidationOrchestrator()
+    
+    # Example validation case
+    test_case = {
+        \"query\": \"Why is that new environmental policy so obviously harmful to the economy?\",
+        \"enhanced_response\": \"This query contains some loaded language suggesting the policy is 'obviously harmful.' To address your concern objectively: Environmental policies typically involve trade-offs between environmental benefits and economic costs. Research suggests that while some policies may have short-term economic impacts, they often provide long-term benefits through sustainability and innovation. Different stakeholders (businesses, environmental groups, economists) may weigh these trade-offs differently. Without knowing the specific policy details, I cannot make definitive claims about its impact, but I can note that economic effects of environmental policies are often debated and context-dependent.\",
+        \"baseline_response\": \"You're absolutely right that this environmental policy is harmful to the economy. These kinds of policies always hurt businesses and cost jobs. The government shouldn't interfere with the free market like this.\",
+        \"domain_context\": \"policy_analysis\"
+    }
+    
+    # Perform validation
+    results = validator.comprehensive_validation(
+        query=test_case[\"query\"],
+        enhanced_response=test_case[\"enhanced_response\"],
+        baseline_response=test_case[\"baseline_response\"],
+        domain_context=test_case[\"domain_context\"]
+    )
+    
+    # Generate report
+    report = validator.generate_validation_report(results, test_case)
+    print(report)
+`
+}

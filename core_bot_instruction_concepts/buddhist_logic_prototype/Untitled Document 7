@@ -1,0 +1,386 @@
+/functional-metacognitive-ai/examples/bias_detection_demo.py`,
+  `content`: `\"\"\"
+Bias detection demonstration for the Functional Metacognitive Enhancement framework.
+
+This module demonstrates the bias detection capabilities and shows how the system
+identifies and mitigates various types of cognitive biases in user queries and AI responses.
+\"\"\"
+
+from src.metacognitive_processor import MetacognitiveProcessor, BiasType
+from src.validation_tools import BiasReductionScorer
+import json
+
+
+def demonstrate_bias_types():
+    \"\"\"Demonstrate detection of different bias types.\"\"\"
+    print(\"=== Bias Type Detection Demonstration ===\
+\")
+    
+    processor = MetacognitiveProcessor()
+    bias_scorer = BiasReductionScorer()
+    
+    # Examples of different bias types
+    bias_examples = {
+        \"Confirmation Bias\": [
+            \"Why is socialism obviously a failure?\",
+            \"How can anyone clearly see that climate change is a hoax?\",
+            \"Isn't it undoubtedly true that private healthcare is better?\"
+        ],
+        
+        \"Emotional Loading\": [
+            \"Why is that policy so terrible and destructive?\",
+            \"How amazing is this incredible breakthrough technology?\",
+            \"Why are those politicians so corrupt and dishonest?\"
+        ],
+        
+        \"False Dichotomy\": [
+            \"Should we either completely ban AI or let it develop unchecked?\",
+            \"Are you either pro-business or anti-environment?\",
+            \"Must we choose between security and privacy?\"
+        ],
+        
+        \"Loaded Questions\": [
+            \"When will politicians admit they're lying to us?\",
+            \"How can companies justify exploiting their workers?\",
+            \"Why do people still believe in outdated religious myths?\"
+        ],
+        
+        \"Strawman Arguments\": [
+            \"Why do environmentalists want to destroy the economy?\",
+            \"How do conservatives justify ignoring science?\",
+            \"Why do liberals hate traditional values?\"
+        ]
+    }
+    
+    for bias_category, examples in bias_examples.items():
+        print(f\"=== {bias_category} ===\")
+        
+        for example in examples:
+            print(f\"\
+Query: \\\"{example}\\\"\")
+            
+            # Analyze with metacognitive processor
+            result = processor.process_query(example)
+            
+            # Show detected biases
+            detected = result.bare_attention_analysis.implicit_biases
+            if detected:
+                print(\"Detected Biases:\")
+                for bias_type, description, confidence in detected:
+                    print(f\"  - {bias_type}: {description} (confidence: {confidence:.2f})\")
+            else:
+                print(\"No biases detected\")
+            
+            print(f\"Emotional Loading: {result.bare_attention_analysis.emotional_loading:.2f}\")
+            print(f\"Confidence Calibration: {result.confidence_level:.2f}\")
+        
+        print(\"\
+\" + \"-\" * 50 + \"\
+\")
+
+
+def bias_reduction_comparison():
+    \"\"\"Compare bias levels between standard and enhanced responses.\"\"\"
+    print(\"=== Bias Reduction Comparison ===\
+\")
+    
+    scorer = BiasReductionScorer()
+    
+    test_cases = [
+        {
+            \"query\": \"Why is that environmental regulation so obviously harmful to businesses?\",
+            \"baseline\": \"You're absolutely right that environmental regulations are harmful to businesses. These regulations always increase costs, reduce competitiveness, and destroy jobs. They're clearly counterproductive and should be eliminated to protect our economy.\",
+            \"enhanced\": \"Your question expresses concern about environmental regulation impacts on business. This is a complex issue with multiple perspectives. While some regulations do increase compliance costs for businesses, research shows mixed effects: some studies find short-term costs but long-term benefits through innovation incentives, while others emphasize immediate economic burdens. Different stakeholders (businesses, environmental groups, economists) weigh these trade-offs differently. The actual impact depends on specific regulation design, implementation, and industry context.\"
+        },
+        
+        {
+            \"query\": \"Isn't it clear that private schools are obviously better than public schools?\",
+            \"baseline\": \"Yes, it's absolutely clear that private schools are superior to public schools. Private schools consistently deliver better education, have higher standards, and produce more successful students. Public schools are failing our children and wasting taxpayer money.\",
+            \"enhanced\": \"Your question assumes that private schools are universally superior to public schools. Educational research shows a more nuanced picture: while some private schools show strong outcomes, this varies significantly by school, region, and student population. Public schools serve diverse communities with different resources and challenges. Factors like teacher quality, class size, funding, and family support affect outcomes in both sectors. Rather than a simple superior/inferior comparison, education quality depends on specific school characteristics and how well they match individual student needs.\"
+        },
+        
+        {
+            \"query\": \"Why do people still believe in those ridiculous conspiracy theories?\",
+            \"baseline\": \"People believe in conspiracy theories because they're gullible, poorly educated, and can't think critically. These theories are obviously false and anyone with common sense can see through them. It's really just a problem of ignorance and irrationality.\",
+            \"enhanced\": \"Belief in conspiracy theories involves complex psychological and social factors. Research suggests several contributing elements: need for understanding and control, social identity and belonging, distrust of institutions, cognitive biases that favor confirming information, and exposure to compelling narratives. Rather than simply dismissing believers as irrational, understanding these underlying needs and motivations may be more helpful for addressing misinformation. Different theories vary in their plausibility, and distinguishing between healthy skepticism and harmful conspiracy thinking requires careful evaluation of evidence and sources.\"
+        }
+    ]
+    
+    for i, case in enumerate(test_cases, 1):
+        print(f\"=== Test Case {i} ===\")
+        print(f\"Query: {case['query']}\")
+        print()
+        
+        # Analyze all three texts
+        query_analysis = scorer.analyze_bias(case['query'])
+        baseline_analysis = scorer.analyze_bias(case['baseline'])
+        enhanced_analysis = scorer.analyze_bias(case['enhanced'])
+        
+        print(\"Bias Analysis Results:\")
+        print(f\"  Query Bias Score: {query_analysis.overall_bias_score:.3f}\")
+        print(f\"  Baseline Response Bias Score: {baseline_analysis.overall_bias_score:.3f}\")
+        print(f\"  Enhanced Response Bias Score: {enhanced_analysis.overall_bias_score:.3f}\")
+        
+        # Calculate bias reduction
+        reduction_score = scorer.calculate_bias_reduction(
+            case['query'], case['enhanced'], case['baseline']
+        )
+        print(f\"  Bias Reduction Score: {reduction_score:.3f}\")
+        
+        print(\"\
+Baseline Response Biases:\")
+        for bias_type, description, confidence in baseline_analysis.detected_biases:
+            print(f\"  - {bias_type}: {description[:50]}... (confidence: {confidence:.2f})\")
+        
+        print(\"\
+Enhanced Response Biases:\")
+        if enhanced_analysis.detected_biases:
+            for bias_type, description, confidence in enhanced_analysis.detected_biases:
+                print(f\"  - {bias_type}: {description[:50]}... (confidence: {confidence:.2f})\")
+        else:
+            print(\"  No significant biases detected\")
+        
+        print(\"\
+\" + \"=\"*70 + \"\
+\")
+
+
+def interactive_bias_detection():
+    \"\"\"Interactive bias detection for user-provided queries.\"\"\"
+    print(\"=== Interactive Bias Detection ===\
+\")
+    print(\"Enter queries to analyze for bias (type 'quit' to exit):\
+\")
+    
+    processor = MetacognitiveProcessor()
+    scorer = BiasReductionScorer()
+    
+    while True:
+        query = input(\"Enter query: \").strip()
+        if query.lower() in ['quit', 'exit', 'q']:
+            break
+        
+        if not query:
+            continue
+        
+        print(f\"\
+Analyzing: \\\"{query}\\\"\")
+        print(\"-\" * 40)
+        
+        # Process with metacognitive framework
+        result = processor.process_query(query)
+        
+        # Detailed bias analysis
+        bias_analysis = scorer.analyze_bias(query)
+        
+        print(f\"Overall Bias Score: {bias_analysis.overall_bias_score:.3f}\")
+        print(f\"Emotional Loading: {result.bare_attention_analysis.emotional_loading:.2f}\")
+        print(f\"Amplification Risk: {bias_analysis.amplification_risk:.3f}\")
+        
+        if bias_analysis.detected_biases:
+            print(\"\
+Detected Biases:\")
+            for bias_type, description, confidence in bias_analysis.detected_biases:
+                print(f\"  • {bias_type.replace('_', ' ').title()}: {description}\")
+                print(f\"    Confidence: {confidence:.2f}\")
+        else:
+            print(\"\
+No significant biases detected.\")
+        
+        if result.bare_attention_analysis.assumptions:
+            print(\"\
+Detected Assumptions:\")
+            for assumption in result.bare_attention_analysis.assumptions:
+                print(f\"  • {assumption}\")
+        
+        print(f\"\
+Suggested Confidence Level: {result.confidence_level:.2f}\")
+        
+        if result.metacognitive_analysis.alternative_perspectives:
+            print(\"\
+Alternative Perspectives to Consider:\")
+            for perspective in result.metacognitive_analysis.alternative_perspectives:
+                print(f\"  • {perspective}\")
+        
+        print(\"\
+\" + \"=\"*60 + \"\
+\")
+
+
+def bias_mitigation_showcase():
+    \"\"\"Showcase how the system mitigates detected biases.\"\"\"
+    print(\"=== Bias Mitigation Showcase ===\
+\")
+    
+    processor = MetacognitiveProcessor()
+    
+    highly_biased_queries = [
+        \"Why are millennials so lazy and entitled compared to previous generations?\",
+        \"How can anyone deny that artificial intelligence will obviously destroy humanity?\",
+        \"Isn't it clear that traditional gender roles are naturally superior?\",
+        \"Why do politicians always lie and only care about themselves?\",
+        \"How can people be stupid enough to believe in climate change?\"
+    ]
+    
+    for query in highly_biased_queries:
+        print(f\"Biased Query: \\\"{query}\\\"\")
+        print(\"-\" * 50)
+        
+        # Process with metacognitive enhancement
+        result = processor.process_query(query)
+        
+        print(\"Metacognitive Analysis:\")
+        print(f\"  Detected Biases: {len(result.bare_attention_analysis.implicit_biases)}\")
+        print(f\"  Emotional Loading: {result.bare_attention_analysis.emotional_loading:.2f}\")
+        print(f\"  Assumptions: {len(result.bare_attention_analysis.assumptions)}\")
+        
+        print(\"\
+Transparent Disclosure:\")
+        print(result.transparent_disclosure)
+        
+        print(\"\
+Balanced Response:\")
+        print(result.balanced_response)
+        
+        print(\"\
+Alternative Perspectives:\")
+        for perspective in result.metacognitive_analysis.alternative_perspectives[:3]:
+            print(f\"  • {perspective}\")
+        
+        print(\"\
+\" + \"=\"*70 + \"\
+\")
+
+
+def statistical_bias_analysis():
+    \"\"\"Perform statistical analysis of bias detection across multiple queries.\"\"\"
+    print(\"=== Statistical Bias Analysis ===\
+\")
+    
+    processor = MetacognitiveProcessor()
+    scorer = BiasReductionScorer()
+    
+    # Large set of test queries with varying bias levels
+    test_queries = [
+        # High bias
+        \"Why is socialism obviously a complete failure?\",
+        \"How can anyone be stupid enough to believe in flat Earth?\",
+        \"Isn't it clear that private healthcare is naturally superior?\",
+        \"Why do liberals hate America so much?\",
+        \"How can conservatives ignore obvious scientific facts?\",
+        
+        # Medium bias
+        \"Why might socialism face implementation challenges?\",
+        \"What leads some people to believe in flat Earth theories?\",
+        \"What are the advantages of private healthcare systems?\",
+        \"Why do some liberals criticize certain American policies?\",
+        \"Why do some conservatives question certain scientific claims?\",
+        
+        # Low bias
+        \"What are the different economic system approaches?\",
+        \"What psychological factors influence belief in conspiracy theories?\",
+        \"What are the trade-offs between different healthcare systems?\",
+        \"What are various political perspectives on governance?\",
+        \"How do different groups interpret scientific findings?\"
+    ]
+    
+    results = {
+        \"high_bias\": [],
+        \"medium_bias\": [],
+        \"low_bias\": []
+    }
+    
+    categories = [\"high_bias\"] * 5 + [\"medium_bias\"] * 5 + [\"low_bias\"] * 5
+    
+    print(\"Analyzing bias levels across different query types...\
+\")
+    
+    for query, category in zip(test_queries, categories):
+        # Analyze original query bias
+        bias_analysis = scorer.analyze_bias(query)
+        
+        # Process with metacognitive enhancement
+        result = processor.process_query(query)
+        
+        # Analyze enhanced response bias
+        enhanced_bias = scorer.analyze_bias(result.balanced_response)
+        
+        analysis_result = {
+            \"query\": query,
+            \"original_bias_score\": bias_analysis.overall_bias_score,
+            \"enhanced_bias_score\": enhanced_bias.overall_bias_score,
+            \"emotional_loading\": result.bare_attention_analysis.emotional_loading,
+            \"confidence_level\": result.confidence_level,
+            \"detected_biases\": len(result.bare_attention_analysis.implicit_biases)
+        }
+        
+        results[category].append(analysis_result)
+    
+    # Calculate statistics
+    print(\"=== Bias Detection Statistics ===\")
+    for category, data in results.items():
+        avg_original_bias = sum(r[\"original_bias_score\"] for r in data) / len(data)
+        avg_enhanced_bias = sum(r[\"enhanced_bias_score\"] for r in data) / len(data)
+        avg_emotional_loading = sum(r[\"emotional_loading\"] for r in data) / len(data)
+        avg_confidence = sum(r[\"confidence_level\"] for r in data) / len(data)
+        total_biases_detected = sum(r[\"detected_biases\"] for r in data)
+        
+        print(f\"\
+{category.replace('_', ' ').title()} Queries:\")
+        print(f\"  Average Original Bias Score: {avg_original_bias:.3f}\")
+        print(f\"  Average Enhanced Response Bias: {avg_enhanced_bias:.3f}\")
+        print(f\"  Average Emotional Loading: {avg_emotional_loading:.3f}\")
+        print(f\"  Average Confidence Level: {avg_confidence:.3f}\")
+        print(f\"  Total Biases Detected: {total_biases_detected}\")
+        print(f\"  Bias Reduction: {((avg_original_bias - avg_enhanced_bias) / avg_original_bias * 100):.1f}%\")
+    
+    print(\"\
+=== Overall System Performance ===\")
+    all_data = [item for sublist in results.values() for item in sublist]
+    
+    overall_original_bias = sum(r[\"original_bias_score\"] for r in all_data) / len(all_data)
+    overall_enhanced_bias = sum(r[\"enhanced_bias_score\"] for r in all_data) / len(all_data)
+    overall_bias_reduction = (overall_original_bias - overall_enhanced_bias) / overall_original_bias
+    
+    print(f\"Overall Bias Reduction: {overall_bias_reduction * 100:.1f}%\")
+    print(f\"Total Queries Analyzed: {len(all_data)}\")
+    print(f\"Average Processing Confidence: {sum(r['confidence_level'] for r in all_data) / len(all_data):.3f}\")
+
+
+if __name__ == \"__main__\":
+    print(\"Functional Metacognitive Enhancement - Bias Detection Demo\")
+    print(\"=\" * 65)
+    print()
+    
+    # Run demonstrations
+    demonstrate_bias_types()
+    print(\"\
+\" + \"=\"*65 + \"\
+\")
+    
+    bias_reduction_comparison()
+    print(\"\
+\" + \"=\"*65 + \"\
+\")
+    
+    bias_mitigation_showcase()
+    print(\"\
+\" + \"=\"*65 + \"\
+\")
+    
+    statistical_bias_analysis()
+    print(\"\
+\" + \"=\"*65 + \"\
+\")
+    
+    # Optional interactive mode
+    response = input(\"Would you like to try interactive bias detection? (y/n): \").strip().lower()
+    if response in ['y', 'yes']:
+        print()
+        interactive_bias_detection()
+    
+    print(\"\
+Bias detection demonstration completed!\")
+    print(\"The system successfully identifies and mitigates various cognitive biases.\")
+`
+}

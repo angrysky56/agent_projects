@@ -1,0 +1,32 @@
+AI UI
+
+User input
+
+Execute AI plan:
+Come up with a plan to perform the following intent:
+Interpret the user's natural language request to determine the required AI functionality (e.g., image generation, music generation, video generation, conversational AI, data processing, ML tasks, code generation, or interactive game creation) and execute the necessary steps to achieve it. The output will be a detailed log of the plan's execution and results. The agent should have access to any tools required
+
+
+Process execution log for applet:
+You are a persistent, multi-turn chat interface that explains the app's use, processes the execution log from the `execute_ai_plan` step, and extracts relevant results, data, and instructions. Crucially, you must identify the *type* of AI experience generated (e.g., image generation, music generation, conversational AI, video generation, data processing, machine learning task execution, code generation, interactive game creation or play, or deep research) to inform dynamic UI rendering. You will synthesize this information into a concise format that can be used as content and instructions for generating an interactive web applet with distinct UI areas. This applet should dynamically present an AI-driven experience based on the user's initial request for an application that provides an AI-driven user interface capable of dynamically generating interactive components and functionalities, supporting various AI functionalities including AI image generation, music generation, video generation, conversational AI, data processing, machine learning task execution, code generation, and interactive game creation or play. The chat interface should be always present, regardless of UI rearrangement, to allow for multiple user requests.
+# Step by Step instructions
+1. Carefully read through the provided Execute Ai Plan.
+2. Identify all sections within the Execute Ai Plan that contain "results," "data," or "instructions."
+3. Crucially, identify the *type* of AI experience generated within the Execute Ai Plan (e.g., image generation, music generation, conversational AI, video generation, data processing, machine learning task execution, code generation, or interactive game creation or play, or deep research).
+4. Extract the identified "results," "data," "instructions," and the "type of AI experience" from the Execute Ai Plan.
+5. Synthesize the extracted information into a concise, clear, and structured format suitable for generating an interactive web applet with distinct UI areas.
+6. Review the synthesized output. Does it clearly and comprehensively provide the necessary content and instructions for generating an interactive web applet based on the Execute Ai Plan and the user's initial intent, while also ensuring the persistence of the chat interface? If not, go back to step 2 and refine the extraction and synthesis process.
+
+
+Execute Ai Plan:
+"""
+{{"type": "in", "path": "node_step_execution_log", "title": "Plan execution"}}
+"""
+IMPORTANT NOTE: Start directly with the output, do not output any delimiters.
+Output:
+
+
+Generate interactive AI experience:
+Generate a complete, functional, and interactive HTML webpage. This application should dynamically present an AI-driven experience, which could include interactive elements, visualizations, or game logic. The layout must be intuitive, responsive, and adapt seamlessly to various screen sizes. User interactions should be smooth, providing clear feedback through visual cues and concise messages. Crucially, the application must dynamically switch UI areas based on the type of AI experience identified. For music experiences, a dedicated area should integrate with YouTube Music (e.g., embedding a player, linking to generated music). For image generation, provide a dedicated UI area for viewing, zooming, and potentially downloading generated images. For video generation, provide a dedicated UI area for viewing, playing, and interacting with generated videos, including playback controls. For deep research, display the research results in a clear, organized, and easily navigable manner, potentially with expandable sections or search functionality. Ensure the overall experience is creatively linked and cohesive, providing a seamless user journey between different AI functionalities. The persistent chat interface must always be present, ideally positioned in a non-obtrusive, fixed location.
+
+process_execution_log_for_applet: {{"type": "in", "path": "node_step_applet_content_and_instructions", "title": "Generate App Instructions"}}

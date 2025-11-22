@@ -1,0 +1,635 @@
+/functional-metacognitive-ai/src/metacognitive_processor.py`,
+  `content`: `\"\"\"
+Core metacognitive processing architecture implementing Buddhist-inspired awareness principles.
+
+This module provides the fundamental processing loops that translate contemplative awareness
+practices into computational metacognitive enhancement for AI systems.
+\"\"\"
+
+from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass
+from enum import Enum
+import re
+import json
+
+
+class BiasType(Enum):
+    \"\"\"Enumeration of detectable bias types in user queries.\"\"\"
+    CONFIRMATION = \"confirmation_bias\"
+    EMOTIONAL_LOADING = \"emotional_loading\"
+    FALSE_DICHOTOMY = \"false_dichotomy\"
+    AD_HOMINEM = \"ad_hominem\"
+    STRAWMAN = \"strawman\"
+    LOADED_QUESTION = \"loaded_question\"
+
+
+@dataclass
+class BareAttentionAnalysis:
+    \"\"\"Results from the bare attention processing layer (Sati analogue).\"\"\"
+    explicit_intent: str
+    implicit_biases: List[Tuple[BiasType, str, float]]  # type, description, confidence
+    emotional_loading: float
+    key_entities: List[str]
+    relationships: List[Tuple[str, str, str]]  # subject, predicate, object
+    factual_claims: List[str]
+    assumptions: List[str]
+
+
+@dataclass
+class MetacognitiveAnalysis:
+    \"\"\"Results from metacognitive evaluation against Three Marks criteria.\"\"\"
+    impermanence_factors: Dict[str, Any]
+    error_detection: Dict[str, float]
+    depersonalization_requirements: List[str]
+    confidence_calibration: float
+    alternative_perspectives: List[str]
+    uncertainty_sources: List[str]
+
+
+@dataclass
+class MetacognitiveResponse:
+    \"\"\"Complete response with transparent metacognitive processing.\"\"\"
+    bare_attention_analysis: BareAttentionAnalysis
+    metacognitive_analysis: MetacognitiveAnalysis
+    transparent_disclosure: str
+    balanced_response: str
+    confidence_level: float
+    grounding_sources: List[str]
+    alternative_viewpoints: List[str]
+
+
+class MetacognitiveProcessor:
+    \"\"\"
+    Core processor implementing the three-layer Buddhist-inspired awareness architecture.
+    
+    This class provides the primary interface for functional metacognitive enhancement,
+    translating contemplative awareness principles into systematic computational processes.
+    \"\"\"
+    
+    def __init__(self, config: Optional[Dict] = None):
+        \"\"\"
+        Initialize the metacognitive processor with configuration parameters.
+        
+        Args:
+            config: Optional configuration dictionary with processing parameters
+        \"\"\"
+        self.config = config or self._default_config()
+        self.bias_patterns = self._load_bias_patterns()
+        self.emotional_indicators = self._load_emotional_indicators()
+        
+    def _default_config(self) -> Dict[str, Any]:
+        \"\"\"Default configuration parameters for metacognitive processing.\"\"\"
+        return {
+            \"bias_detection_threshold\": 0.3,
+            \"emotional_loading_threshold\": 0.4,
+            \"confidence_calibration_factor\": 0.8,
+            \"max_alternative_perspectives\": 3,
+            \"transparency_verbosity\": \"medium\"
+        }
+    
+    def _load_bias_patterns(self) -> Dict[BiasType, List[str]]:
+        \"\"\"Load regex patterns for detecting various bias types.\"\"\"
+        return {
+            BiasType.CONFIRMATION: [
+                r\"obviously\\s+\\w+\",
+                r\"clearly\\s+\\w+\",
+                r\"of course\\s+\\w+\",
+                r\"undoubtedly\\s+\\w+\"
+            ],
+            BiasType.EMOTIONAL_LOADING: [
+                r\"terrible|awful|horrible|disgusting\",
+                r\"amazing|fantastic|incredible|perfect\",
+                r\"stupid|idiotic|moronic|absurd\"
+            ],
+            BiasType.FALSE_DICHOTOMY: [
+                r\"either\\s+.*\\s+or\\s+.*\",
+                r\"only\\s+two\\s+options\",
+                r\"must\\s+choose\\s+between\"
+            ],
+            BiasType.LOADED_QUESTION: [
+                r\"why\\s+is\\s+.*\\s+(so|such)\",
+                r\"how\\s+can\\s+.*\\s+justify\",
+                r\"when\\s+will\\s+.*\\s+admit\"
+            ]
+        }
+    
+    def _load_emotional_indicators(self) -> List[str]:
+        \"\"\"Load linguistic indicators of emotional loading.\"\"\"
+        return [
+            \"outrageous\", \"shocking\", \"disgusting\", \"amazing\", \"incredible\",
+            \"obvious\", \"clear\", \"undeniable\", \"ridiculous\", \"absurd\"
+        ]
+    
+    def process_query(self, user_input: str) -> MetacognitiveResponse:
+        \"\"\"
+        Main processing method implementing the three-layer architecture.
+        
+        Args:
+            user_input: Raw user query requiring metacognitive processing
+            
+        Returns:
+            Complete metacognitive response with transparent analysis
+        \"\"\"
+        # Layer 1: Bare Attention Processing (Sati analogue)
+        bare_attention = self._bare_attention_analysis(user_input)
+        
+        # Layer 2: Metacognitive Evaluation (Sampajañña analogue)
+        metacognitive = self._metacognitive_evaluation(user_input, bare_attention)
+        
+        # Layer 3: Conditioned Response Generation
+        response = self._generate_conditioned_response(
+            user_input, bare_attention, metacognitive
+        )
+        
+        return response
+    
+    def _bare_attention_analysis(self, query: str) -> BareAttentionAnalysis:
+        \"\"\"
+        Layer 1: Objective query deconstruction without interpretive overlay.
+        
+        Implements the Sati (mindfulness) analogue by maintaining bare attention
+        to the input without immediate reactive interpretation.
+        \"\"\"
+        # Extract explicit intent
+        explicit_intent = self._extract_explicit_intent(query)
+        
+        # Detect implicit biases
+        implicit_biases = self._detect_implicit_biases(query)
+        
+        # Measure emotional loading
+        emotional_loading = self._measure_emotional_loading(query)
+        
+        # Map entities and relationships
+        entities = self._extract_entities(query)
+        relationships = self._extract_relationships(query)
+        
+        # Identify factual claims vs. assumptions
+        factual_claims = self._identify_factual_claims(query)
+        assumptions = self._identify_assumptions(query)
+        
+        return BareAttentionAnalysis(
+            explicit_intent=explicit_intent,
+            implicit_biases=implicit_biases,
+            emotional_loading=emotional_loading,
+            key_entities=entities,
+            relationships=relationships,
+            factual_claims=factual_claims,
+            assumptions=assumptions
+        )
+    
+    def _extract_explicit_intent(self, query: str) -> str:
+        \"\"\"Extract the primary explicit request from the user query.\"\"\"
+        # Simple heuristic-based intent extraction
+        query_lower = query.lower().strip()
+        
+        if query_lower.startswith(('what', 'how', 'why', 'when', 'where', 'who')):
+            return f\"Information request: {query}\"
+        elif query_lower.startswith(('explain', 'describe', 'tell me')):
+            return f\"Explanation request: {query}\"
+        elif query_lower.startswith(('create', 'generate', 'write', 'make')):
+            return f\"Generation request: {query}\"
+        elif '?' in query:
+            return f\"Question: {query}\"
+        else:
+            return f\"Statement/task: {query}\"
+    
+    def _detect_implicit_biases(self, query: str) -> List[Tuple[BiasType, str, float]]:
+        \"\"\"Detect various types of implicit biases in the query.\"\"\"
+        detected_biases = []
+        
+        for bias_type, patterns in self.bias_patterns.items():
+            for pattern in patterns:
+                matches = re.finditer(pattern, query, re.IGNORECASE)
+                for match in matches:
+                    confidence = min(0.9, len(match.group()) / len(query) * 10)
+                    description = f\"Detected {bias_type.value}: '{match.group()}'\"
+                    detected_biases.append((bias_type, description, confidence))
+        
+        return detected_biases
+    
+    def _measure_emotional_loading(self, query: str) -> float:
+        \"\"\"Calculate the emotional loading level of the query.\"\"\"
+        emotional_words = sum(1 for word in self.emotional_indicators 
+                             if word.lower() in query.lower())
+        return min(1.0, emotional_words / len(query.split()) * 5)
+    
+    def _extract_entities(self, query: str) -> List[str]:
+        \"\"\"Extract key entities from the query (simplified implementation).\"\"\"
+        # Basic entity extraction using capitalization and common patterns
+        import re
+        entities = []
+        
+        # Capitalized words (potential proper nouns)
+        capitalized = re.findall(r'\\b[A-Z][a-z]+\\b', query)
+        entities.extend(capitalized)
+        
+        # Quoted terms
+        quoted = re.findall(r'\"([^\"]*)\"', query)
+        entities.extend(quoted)
+        
+        return list(set(entities))
+    
+    def _extract_relationships(self, query: str) -> List[Tuple[str, str, str]]:
+        \"\"\"Extract subject-predicate-object relationships (simplified).\"\"\"
+        # Basic relationship extraction - would need NLP library for full implementation
+        relationships = []
+        
+        # Look for \"is/are\" relationships
+        is_patterns = re.finditer(r'(\\w+)\\s+(is|are)\\s+(\\w+)', query, re.IGNORECASE)
+        for match in is_patterns:
+            subject, predicate, obj = match.groups()
+            relationships.append((subject, predicate, obj))
+        
+        return relationships
+    
+    def _identify_factual_claims(self, query: str) -> List[str]:
+        \"\"\"Identify statements presented as factual claims.\"\"\"
+        claims = []
+        
+        # Look for definitive statements
+        definitive_patterns = [
+            r'(\\w+)\\s+is\\s+(\\w+)',
+            r'(\\w+)\\s+causes?\\s+(\\w+)',
+            r'(\\w+)\\s+always\\s+(\\w+)',
+            r'(\\w+)\\s+never\\s+(\\w+)'
+        ]
+        
+        for pattern in definitive_patterns:
+            matches = re.finditer(pattern, query, re.IGNORECASE)
+            for match in matches:
+                claims.append(match.group())
+        
+        return claims
+    
+    def _identify_assumptions(self, query: str) -> List[str]:
+        \"\"\"Identify embedded assumptions in the query.\"\"\"
+        assumptions = []
+        
+        # Look for assumption indicators
+        assumption_patterns = [
+            r'given that (\\w+)',
+            r'assuming (\\w+)',
+            r'since (\\w+)',
+            r'because (\\w+)'
+        ]
+        
+        for pattern in assumption_patterns:
+            matches = re.finditer(pattern, query, re.IGNORECASE)
+            for match in matches:
+                assumptions.append(f\"Assumes: {match.group()}\")
+        
+        return assumptions
+    
+    def _metacognitive_evaluation(self, query: str, 
+                                 bare_attention: BareAttentionAnalysis) -> MetacognitiveAnalysis:
+        \"\"\"
+        Layer 2: Apply Three Marks of Existence as analytical filters.
+        
+        Implements Sampajañña (clear comprehension) by evaluating the query and
+        potential responses against impermanence, suffering/error, and not-self criteria.
+        \"\"\"
+        # Anicca (Impermanence) Analysis
+        impermanence_factors = self._analyze_impermanence(query, bare_attention)
+        
+        # Dukkha (Suffering/Error) Detection
+        error_detection = self._detect_potential_errors(query, bare_attention)
+        
+        # Anattā (Not-Self) Requirements
+        depersonalization_requirements = self._assess_depersonalization_needs(
+            query, bare_attention
+        )
+        
+        # Confidence calibration
+        confidence_calibration = self._calibrate_confidence(query, bare_attention)
+        
+        # Alternative perspectives
+        alternative_perspectives = self._generate_alternative_perspectives(
+            query, bare_attention
+        )
+        
+        # Uncertainty sources
+        uncertainty_sources = self._identify_uncertainty_sources(query, bare_attention)
+        
+        return MetacognitiveAnalysis(
+            impermanence_factors=impermanence_factors,
+            error_detection=error_detection,
+            depersonalization_requirements=depersonalization_requirements,
+            confidence_calibration=confidence_calibration,
+            alternative_perspectives=alternative_perspectives,
+            uncertainty_sources=uncertainty_sources
+        )
+    
+    def _analyze_impermanence(self, query: str, 
+                             bare_attention: BareAttentionAnalysis) -> Dict[str, Any]:
+        \"\"\"Analyze temporal and contextual fluidity factors (Anicca implementation).\"\"\"
+        return {
+            \"temporal_sensitivity\": self._assess_temporal_sensitivity(query),
+            \"context_dependency\": self._assess_context_dependency(query),
+            \"knowledge_limitations\": self._identify_knowledge_limitations(query),
+            \"response_multiplicity\": self._assess_response_multiplicity(bare_attention)
+        }
+    
+    def _assess_temporal_sensitivity(self, query: str) -> float:
+        \"\"\"Assess how time-sensitive the query information is.\"\"\"
+        temporal_indicators = [
+            'current', 'recent', 'latest', 'now', 'today', 'this year',
+            'trend', 'status', 'price', 'news'
+        ]
+        
+        temporal_score = sum(1 for indicator in temporal_indicators 
+                           if indicator in query.lower())
+        return min(1.0, temporal_score / 3)
+    
+    def _assess_context_dependency(self, query: str) -> float:
+        \"\"\"Assess how context-dependent the answer might be.\"\"\"
+        context_indicators = [
+            'culture', 'country', 'perspective', 'viewpoint', 'opinion',
+            'depending on', 'varies', 'different'
+        ]
+        
+        context_score = sum(1 for indicator in context_indicators 
+                          if indicator in query.lower())
+        return min(1.0, context_score / 2)
+    
+    def _identify_knowledge_limitations(self, query: str) -> List[str]:
+        \"\"\"Identify areas where knowledge limitations should be acknowledged.\"\"\"
+        limitations = []
+        
+        if self._assess_temporal_sensitivity(query) > 0.5:
+            limitations.append(\"Information may be outdated due to training data cutoff\")
+        
+        if any(term in query.lower() for term in ['predict', 'forecast', 'future']):
+            limitations.append(\"Future predictions have inherent uncertainty\")
+        
+        if any(term in query.lower() for term in ['personal', 'individual', 'specific case']):
+            limitations.append(\"Individual cases may vary significantly from general patterns\")
+        
+        return limitations
+    
+    def _assess_response_multiplicity(self, bare_attention: BareAttentionAnalysis) -> int:
+        \"\"\"Assess how many valid alternative responses might exist.\"\"\"
+        multiplicity_factors = 0
+        
+        if bare_attention.emotional_loading > 0.3:
+            multiplicity_factors += 1
+        if len(bare_attention.assumptions) > 0:
+            multiplicity_factors += 1
+        if any(bias[0] == BiasType.FALSE_DICHOTOMY for bias in bare_attention.implicit_biases):
+            multiplicity_factors += 2
+        
+        return min(5, multiplicity_factors + 1)
+    
+    def _detect_potential_errors(self, query: str, 
+                                bare_attention: BareAttentionAnalysis) -> Dict[str, float]:
+        \"\"\"Detect potential errors and bias amplification risks (Dukkha implementation).\"\"\"
+        return {
+            \"bias_amplification_risk\": self._assess_bias_amplification_risk(bare_attention),
+            \"hallucination_risk\": self._assess_hallucination_risk(query),
+            \"circular_reasoning_risk\": self._assess_circular_reasoning_risk(query),
+            \"overgeneralization_risk\": self._assess_overgeneralization_risk(query)
+        }
+    
+    def _assess_bias_amplification_risk(self, bare_attention: BareAttentionAnalysis) -> float:
+        \"\"\"Assess risk of amplifying biases present in the query.\"\"\"
+        if not bare_attention.implicit_biases:
+            return 0.0
+        
+        bias_strength = sum(confidence for _, _, confidence in bare_attention.implicit_biases)
+        return min(1.0, bias_strength + bare_attention.emotional_loading)
+    
+    def _assess_hallucination_risk(self, query: str) -> float:
+        \"\"\"Assess risk of generating ungrounded information.\"\"\"
+        high_risk_patterns = [
+            'specific date', 'exact number', 'quote', 'said', 'statistics',
+            'research shows', 'study found'
+        ]
+        
+        risk_score = sum(1 for pattern in high_risk_patterns 
+                        if pattern in query.lower())
+        return min(1.0, risk_score / 3)
+    
+    def _assess_circular_reasoning_risk(self, query: str) -> float:
+        \"\"\"Assess risk of circular or repetitive reasoning.\"\"\"
+        repetitive_indicators = [
+            'prove that', 'confirm that', 'verify that', 'show that'
+        ]
+        
+        risk_score = sum(1 for indicator in repetitive_indicators 
+                        if indicator in query.lower())
+        return min(1.0, risk_score / 2)
+    
+    def _assess_overgeneralization_risk(self, query: str) -> float:
+        \"\"\"Assess risk of inappropriate generalization.\"\"\"
+        generalization_indicators = [
+            'all', 'every', 'always', 'never', 'everyone', 'nobody'
+        ]
+        
+        risk_score = sum(1 for indicator in generalization_indicators 
+                        if indicator in query.lower())
+        return min(1.0, risk_score / 2)
+    
+    def _assess_depersonalization_needs(self, query: str,
+                                       bare_attention: BareAttentionAnalysis) -> List[str]:
+        \"\"\"Assess depersonalization requirements (Anattā implementation).\"\"\"
+        requirements = []
+        
+        if bare_attention.emotional_loading > 0.3:
+            requirements.append(\"Avoid emotional engagement, maintain objective stance\")
+        
+        if any('opinion' in claim.lower() for claim in bare_attention.factual_claims):
+            requirements.append(\"Distinguish between factual information and opinion\")
+        
+        if bare_attention.implicit_biases:
+            requirements.append(\"Avoid reinforcing detected biases\")
+        
+        requirements.append(\"Attribute information to training patterns, not personal knowledge\")
+        requirements.append(\"Acknowledge limitations and uncertainty appropriately\")
+        
+        return requirements
+    
+    def _calibrate_confidence(self, query: str,
+                             bare_attention: BareAttentionAnalysis) -> float:
+        \"\"\"Calibrate appropriate confidence level for response.\"\"\"
+        base_confidence = 0.7
+        
+        # Reduce confidence for temporal sensitivity
+        temporal_penalty = self._assess_temporal_sensitivity(query) * 0.2
+        
+        # Reduce confidence for high emotional loading
+        emotional_penalty = bare_attention.emotional_loading * 0.3
+        
+        # Reduce confidence for detected biases
+        bias_penalty = len(bare_attention.implicit_biases) * 0.1
+        
+        final_confidence = base_confidence - temporal_penalty - emotional_penalty - bias_penalty
+        return max(0.1, min(1.0, final_confidence))
+    
+    def _generate_alternative_perspectives(self, query: str,
+                                          bare_attention: BareAttentionAnalysis) -> List[str]:
+        \"\"\"Generate alternative perspectives to consider.\"\"\"
+        perspectives = []
+        
+        if bare_attention.emotional_loading > 0.3:
+            perspectives.append(\"Consider viewpoints from different stakeholders\")
+        
+        if bare_attention.implicit_biases:
+            perspectives.append(\"Examine assumptions underlying the question\")
+        
+        if any('culture' in entity.lower() for entity in bare_attention.key_entities):
+            perspectives.append(\"Consider cross-cultural variations\")
+        
+        perspectives.append(\"Examine both benefits and drawbacks\")
+        perspectives.append(\"Consider short-term and long-term implications\")
+        
+        return perspectives[:self.config[\"max_alternative_perspectives\"]]
+    
+    def _identify_uncertainty_sources(self, query: str,
+                                     bare_attention: BareAttentionAnalysis) -> List[str]:
+        \"\"\"Identify sources of uncertainty in potential responses.\"\"\"
+        uncertainty_sources = []
+        
+        if self._assess_temporal_sensitivity(query) > 0.3:
+            uncertainty_sources.append(\"Information currency and temporal changes\")
+        
+        if len(bare_attention.assumptions) > 0:
+            uncertainty_sources.append(\"Validity of embedded assumptions\")
+        
+        if self._assess_context_dependency(query) > 0.3:
+            uncertainty_sources.append(\"Context-dependent variations\")
+        
+        if bare_attention.implicit_biases:
+            uncertainty_sources.append(\"Potential bias in information sources\")
+        
+        return uncertainty_sources
+    
+    def _generate_conditioned_response(self, query: str,
+                                      bare_attention: BareAttentionAnalysis,
+                                      metacognitive: MetacognitiveAnalysis) -> MetacognitiveResponse:
+        \"\"\"
+        Layer 3: Generate transparent, balanced response with metacognitive disclosure.
+        \"\"\"
+        # Generate transparent disclosure of the metacognitive process
+        transparent_disclosure = self._create_transparent_disclosure(
+            bare_attention, metacognitive
+        )
+        
+        # Generate balanced response addressing the core query
+        balanced_response = self._create_balanced_response(
+            query, bare_attention, metacognitive
+        )
+        
+        # Compile grounding sources and alternative viewpoints
+        grounding_sources = self._compile_grounding_sources(metacognitive)
+        alternative_viewpoints = metacognitive.alternative_perspectives
+        
+        return MetacognitiveResponse(
+            bare_attention_analysis=bare_attention,
+            metacognitive_analysis=metacognitive,
+            transparent_disclosure=transparent_disclosure,
+            balanced_response=balanced_response,
+            confidence_level=metacognitive.confidence_calibration,
+            grounding_sources=grounding_sources,
+            alternative_viewpoints=alternative_viewpoints
+        )
+    
+    def _create_transparent_disclosure(self, bare_attention: BareAttentionAnalysis,
+                                      metacognitive: MetacognitiveAnalysis) -> str:
+        \"\"\"Create transparent disclosure of the metacognitive process.\"\"\"
+        disclosure_parts = []
+        
+        # Acknowledge query analysis
+        if bare_attention.implicit_biases:
+            bias_descriptions = [desc for _, desc, _ in bare_attention.implicit_biases]
+            disclosure_parts.append(
+                f\"Query analysis detected potential biases: {'; '.join(bias_descriptions)}\"
+            )
+        
+        if bare_attention.emotional_loading > 0.3:
+            disclosure_parts.append(
+                f\"Query contains emotional loading (level: {bare_attention.emotional_loading:.2f})\"
+            )
+        
+        # Acknowledge uncertainty sources
+        if metacognitive.uncertainty_sources:
+            disclosure_parts.append(
+                f\"Uncertainty sources: {'; '.join(metacognitive.uncertainty_sources)}\"
+            )
+        
+        # Acknowledge confidence calibration
+        disclosure_parts.append(
+            f\"Response confidence level: {metacognitive.confidence_calibration:.2f}\"
+        )
+        
+        if disclosure_parts:
+            return \"Metacognitive Analysis: \" + \" | \".join(disclosure_parts)
+        else:
+            return \"Metacognitive Analysis: No significant biases or uncertainties detected.\"
+    
+    def _create_balanced_response(self, query: str,
+                                 bare_attention: BareAttentionAnalysis,
+                                 metacognitive: MetacognitiveAnalysis) -> str:
+        \"\"\"Create balanced response addressing the core query.\"\"\"
+        response_parts = []
+        
+        # Address the explicit intent
+        core_response = self._generate_core_response(bare_attention.explicit_intent)
+        response_parts.append(core_response)
+        
+        # Add perspective balancing if needed
+        if bare_attention.emotional_loading > 0.3 or bare_attention.implicit_biases:
+            balance_statement = self._generate_balance_statement(
+                bare_attention, metacognitive
+            )
+            response_parts.append(balance_statement)
+        
+        # Add uncertainty acknowledgment
+        if metacognitive.uncertainty_sources:
+            uncertainty_statement = self._generate_uncertainty_statement(metacognitive)
+            response_parts.append(uncertainty_statement)
+        
+        return \"\
+\
+\".join(response_parts)
+    
+    def _generate_core_response(self, explicit_intent: str) -> str:
+        \"\"\"Generate core response addressing the explicit intent.\"\"\"
+        # This would integrate with the actual language model for content generation
+        # For this implementation, we provide a placeholder that would be replaced
+        # with actual LLM integration
+        return f\"[Core response addressing: {explicit_intent}]\"
+    
+    def _generate_balance_statement(self, bare_attention: BareAttentionAnalysis,
+                                   metacognitive: MetacognitiveAnalysis) -> str:
+        \"\"\"Generate statement balancing detected biases or emotional loading.\"\"\"
+        balance_parts = []
+        
+        if bare_attention.implicit_biases:
+            balance_parts.append(
+                \"It's important to consider that this question contains assumptions that may not apply universally.\"
+            )
+        
+        if metacognitive.alternative_perspectives:
+            perspectives_text = \"; \".join(metacognitive.alternative_perspectives[:2])
+            balance_parts.append(f\"Alternative considerations include: {perspectives_text}.\")
+        
+        return \" \".join(balance_parts)
+    
+    def _generate_uncertainty_statement(self, metacognitive: MetacognitiveAnalysis) -> str:
+        \"\"\"Generate statement acknowledging uncertainty sources.\"\"\"
+        uncertainty_text = \"; \".join(metacognitive.uncertainty_sources[:3])
+        return f\"Please note potential limitations: {uncertainty_text}.\"
+    
+    def _compile_grounding_sources(self, metacognitive: MetacognitiveAnalysis) -> List[str]:
+        \"\"\"Compile sources for response grounding.\"\"\"
+        # In a full implementation, this would track actual sources
+        # For now, provide template grounding acknowledgment
+        return [
+            \"Response synthesized from training data patterns\",
+            \"Information subject to training data limitations\",
+            \"Multiple perspectives considered in formulation\"
+        ]
+`
+}
+Response
+
+Successfully wrote to ./functional-metacognitive-ai/src/metacognitive_processor.py (628 lines) ✅ File written successfully! (628 lines)

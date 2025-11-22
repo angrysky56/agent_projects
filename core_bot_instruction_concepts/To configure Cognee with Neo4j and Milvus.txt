@@ -1,0 +1,69 @@
+To configure Cognee with Neo4j and Milvus on your Windows system using PowerShell, follow these steps:
+
+1. **Install Dependencies**:
+   - Ensure you have Python 3.8 or higher installed.
+   - Install the required Python packages:
+     ```powershell
+     pip install pymilvus neo4j cognee
+     ```
+
+2. **Set Environment Variables**:
+   - Open PowerShell and set the necessary environment variables:
+     ```powershell
+     $env:OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"
+     $env:NEO4J_URI = "bolt://localhost:7687"  # Adjust if your Neo4j instance is hosted elsewhere
+     $env:NEO4J_USERNAME = "your_neo4j_username"
+     $env:NEO4J_PASSWORD = "your_neo4j_password"
+     $env:VECTOR_DB_PROVIDER = "milvus"
+     $env:VECTOR_DB_URL = "./milvus.db"  # For Milvus Lite; adjust if using a different setup
+     ```
+   - Replace the placeholder values with your actual credentials.
+
+3. **Configure Cognee**:
+   - In your Python script, configure Cognee to use the specified LLM provider and connect to Neo4j and Milvus:
+     ```python
+     import os
+     import cognee
+
+     # Set LLM API key
+     cognee.config.set_llm_api_key(os.getenv("OPENAI_API_KEY"))
+
+     # Configure Neo4j connection
+     os.environ["NEO4J_URI"] = "bolt://localhost:7687"
+     os.environ["NEO4J_USERNAME"] = "your_neo4j_username"
+     os.environ["NEO4J_PASSWORD"] = "your_neo4j_password"
+
+     # Configure Milvus as the vector database
+     os.environ["VECTOR_DB_PROVIDER"] = "milvus"
+     os.environ["VECTOR_DB_URL"] = "./milvus.db"  # For Milvus Lite; adjust if using a different setup
+     ```
+   - Ensure that the environment variables match those set in PowerShell.
+
+4. **Initialize Cognee with Neo4j and Milvus**:
+   - Use the following code to initialize Cognee with the configured Neo4j and Milvus connections:
+     ```python
+     import cognee
+
+     # Initialize Cognee
+     cognee.init()
+
+     # Example: Add a document to Cognee
+     text = "Natural language processing (NLP) is an interdisciplinary subfield of computer science."
+     await cognee.add([text], "example_dataset")
+
+     # Cognify the added data
+     await cognee.cognify()
+
+     # Search for relevant information
+     search_results = await cognee.search("SIMILARITY", "computer science")
+
+     for result_text in search_results[0]:
+         print(result_text)
+     ```
+   - This setup allows Cognee to utilize Neo4j for graph storage and Milvus for vector storage, enhancing its capabilities for AI applications.
+
+**Additional Resources**:
+- For detailed guidance on building a Retrieval-Augmented Generation (RAG) pipeline with Milvus and Cognee, refer to the [Milvus documentation](https://milvus.io/docs/v2.4.x/build_RAG_with_milvus_and_cognee.md).
+- For insights into integrating Neo4j and Milvus in AI applications, consider reading [this article](https://hackernoon.com/building-a-hybrid-rag-agent-with-neo4j-graphs-and-milvus-vector-search).
+
+By following these steps, you can configure Cognee to work seamlessly with Neo4j and Milvus, leveraging both graph and vector databases for your AI applications. 

@@ -1,0 +1,266 @@
+### 1. **Understand Components of Human-Like Memory**
+   - Humans categorize memories based on context, emotion, time, and relevance.
+   - In AI terms:
+     - **Episodic Memory (Short-Term):** Captures specific events or interactions with high freshness for quick recall.
+     - **Semantic/Spatial Memory (Long-Term):** Stores factual knowledge, patterns, or contextual information that's less frequent but useful for deeper understanding.
+     - **Archival Process:** Similar to human consolidation—memories are reviewed and moved to a "long-term archive" when they're deemed unused or outdated.
+
+### 2. **Framework Design**
+   - **Active Memory (ChromaDB):** This is your primary vector database, storing embeddings of recent user interactions, knowledge chunks, etc. Use it for fast retrieval during real-time queries.
+   - **Archive Database:** A secondary storage system that's more organized and scalable than ChromaDB but less performant (e.g., a SQL database like SQLite or PostgreSQL with full-text search capabilities). This is where unused memories go after pruning.
+   - **Pruning Policy:** Based on time decay and usage frequency:
+     - Keep recent memories in ChromaDB for quick access.
+     - Move older items to the archive if they haven't been used (e.g., queried) recently or have faded relevance.
+     - Use "traces" from previous interactions—such as high-similarity embeddings—to guide retrieval in the archive when relevant.
+
+   To implement this, you can use a combination of time-based and usage-based pruning. Here's an outline:
+
+   - **Short-Term Retention:** ChromaDB should hold memories for a certain period (e.g., last 7 days) to simulate human short-term memory.
+   - **Long-Term Archival:** After this period, if memories are not accessed frequently, they can be moved to the archive. The archival process might involve re-embedding or storing metadata for efficient retrieval later.
+   - **Query Triggering:** Introduce a heuristic during query processing to decide whether to consult the archive:
+     - If ChromaDB doesn't return high-confidence results (e.g., low max similarity score), use traces from recent memory embeddings to search the archive.
+     - Or, if user intent suggests needing historical context (e.g., "I remember you said that last year" or a similar prompt in the conversation history).
+
+### 3. **Implementation Using ChromaDB**
+Since ChromaDB is already set up and efficient for vector similarity searches, we can extend it with an archive system and pruning logic.
+
+#### Key Libraries:
+- Use `chromadb` for active memory.
+- For the archive database, consider a lightweight SQL option like SQLite (via SQLAlchemy or directly) to store memories in a structured way. If you need more advanced search capabilities, use PostgreSQL with extensions like vector support (`pgvector`) or full-text search.
+
+#### Step-by-Step Pseudocode Implementation:
+Here's a Python-based pseudocode framework using ChromaDB and an SQL archive database (SQLite for simplicity). This assumes you're working in a real-time system where memories are added during each interaction, e.g., from RAG-style queries. You'll need to adapt this based on your specific use case.
+
+```python
+from datetime import datetime, timedelta
+import chromadb  # Assume ChromaDB is set up with persistent storage for active memory
+import sqlite3  # For archive DB (SQLite)
+import logging
+
+# Set constants: Adjust these based on your needs
+ACTIVE_MEMORY_DURATION = timedelta(days=7)  # Keep in ChromaDB for the last 7 days
+UNUSED_THRESHOLD = timedelta(days=14)       # If not accessed in 14 days, consider for archiving
+ARCHIVE_DB_PATH = "memory_archive.db"        # Path to your archive database
+
+# Initialize active memory client (ChromaDB)
+active_client = chromadb.PersistentClient(path="./active_memory_db")
+
+# Archive database setup: Use SQLite with a table to store memories and their metadata
+def init_archive_db():
+    conn = sqlite3.connect(ARCHIVE_DB_PATH)
+    c = conn.cursor()
+    # Create tables if not exist (archive_texts for full content, archive_embeddings for vector similarity)
+    c.execute('''CREATE TABLE IF NOT EXISTS memory_archive (
+                id INTEGER PRIMARY KEY,
+                text_content TEXT,
+                embedding BLOB,
+                timestamp DATETIME,
+                metadata JSON)''')
+    return conn
+
+# Connect to the archive DB once
+init_archive_db()
+
+def get_archived_memory_by_embedding(embedding, threshold_similarity):
+    # Placeholder for querying archived data based on similarity traces. 
+    # Since archived memories might not be vector-searchable (if stored differently), use SQL or other search methods.
+    # Example: If embedding matches a high-similarity trace from recent memory, retrieve related archive entries via metadata or full-text search.
+
+    conn = sqlite3.connect(ARCHIVE_DB_PATH)
+    c = conn.cursor()
+    
+    # Convert embedding to a format that can be used for similarity (if archived has vectors) or use text-based search.
+    # But if the archivers is organized with non-vector fields, query based on keywords extracted from the trace.
+
+    # For simplicity, assume we have an index in archive_texts and metadata
+    c.execute("SELECT * FROM memory_archive WHERE embedding_vector %s", (embedding,))
+    results = c.fetchall()
+    
+    # Adjust threshold_similarity to filter noisy matches – this is a tuning parameter.
+    return [result for result in results if similarity_threshold(result, embedding) > threshold_similarity]
+
+# Main Memory Framework Class
+class HumanLikeMemorySystem:
+    def __init__(self):
+        self.active_client = active_client  # ChromaDB client
+        self.archive_conn = sqlite3.connect(ARCHIVE_DB_PATH)  # Archive database connection
+
+    def add_memory(self, text_content, metadata=None):
+        """Add a new memory to active system with an embedding."""
+        if metadata is None:
+            metadata = {"source": "user_query", "timestamp": str(datetime.now())}
+        
+        doc_id = self.generate_unique_id()
+        collection_name = "active_memories"  # Or based on your ChromaDB setup
+        
+        # If using ChromaDB, add the memory here
+        active_collection = self.active_client.get_or_create_collection(name=collection_name)
+        embedding_vector = generate_embedding(text_content)  # Function to create embedding (e.g., using sentence-transformers)
+        
+        active_collection.add_texts(
+            texts=[text_content],
+            metadatas=[metadata],  # Include metadata like source, time
+            embeddings=[[embedding_vector]]  # Use ChromaDB's add_embeddings if supported; not all versions have this
+        )
+        
+        return doc_id
+
+    def retrieve_from_active(self, query_text):
+        """Retrieve from active memory (ChromaDB) based on similarity."""
+        embedding = generate_embedding(query_text)
+        results = self.active_client.get_collection("active_memories").query(
+            query_embeddings=[embedding],
+            n_results=5  # Number of chunks to return
+        )
+        
+        relevant_texts = []
+        for text in results['results']:
+            if hasattr(text, 'distances') and text.distances[0] is not None:  # Assuming ChromaDB returns distances or similarities
+                similarity_score = round(1 - (text.distances[0] / max_distance), 2)  # Adjust based on your distance metric; lower distance might be better for cosine
+            else:
+                # Fallback if no distances are available, e.g., use vector store metrics
+                pass
+            
+            relevant_texts.append((text.text_content, similarity_score))
+        
+        return relevant_texts
+
+    def prune_and_archive(self):
+        """Prune memories from active database and archive them based on age or usage."""
+        logging.info("Starting pruning process...")
+        
+        # Get all documents in active memory (you might need to query ChromaDB for this)
+        # If ChromaDB supports querying by metadata, use that; otherwise, export the collection.
+        active_collection = self.active_client.get_or_create_collection(name="active_memories")
+        docs = active_collection.get()  # This gets all documents with their details
+        
+        pruned_docs = []
+        
+        for doc in docs:
+            if not hasattr(doc.metadata, 'timestamp'): 
+                continue
+            
+            metadata = doc.metadata
+            timestamp_str = metadata['timestamp']
+            last_accessed_time = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%SZ')  # Adjust the date format as needed
+            
+            time_since_last_access = datetime.now() - last_accessed_time
+            
+            if 'created_at' in metadata and (time_since_last_access > timedelta(days=7)):
+                # Or use a combination of age and usage, e.g., not accessed for X days
+                pruned_docs.append(doc)
+                
+        if pruned_docs:
+            logging.info(f"Pruning {len(pruned_docs)} documents from active memory.")
+            
+            archive_conn = sqlite3.connect(ARCHIVE_DB_PATH)  # Ensure the archive DB is connected
+            
+            cursor = archive_conn.cursor()
+            for doc in pruned_docs:
+                try:
+                    text_content, metadata = doc.text, doc.metadata
+                    embedding_vector = doc.embedding_vectors[0] if hasattr(doc, 'embedding_vectors') else generate_embedding(text_content)
+                    
+                    # Insert into SQL table with appropriate columns
+                    cursor.execute("INSERT INTO memory_archive (text_content, metadata) VALUES (?, ?)",
+                                   (text_content, str(metadata)))  # Store metadata as JSON string
+                    
+                    archive_conn.commit()
+                except Exception as e:
+                    logging.error(f"Error archiving document: {e}")
+            archive_conn.close()
+
+    def handle_query(self, user_query):
+        """Main query handling function: Check active memory first, then archive if needed."""
+        current_time = datetime.now()
+        
+        # Retrieve from active memory
+        relevant_texts_from_active, similarity_scores = self.retrieve_from_active(user_query)
+        
+        # Heuristic for deciding whether to consult the archive:
+        # - If there are no relevant texts OR all similarities are low (e.g., < 0.5 on a scale of 0-1) or user intent suggests it.
+        if not relevant_texts_from_active or min(similarity_scores, default=0) < 0.3: 
+            # Trace-based retrieval from archive
+            logging.info("Active memory has insufficient results; searching archive.")
+            
+            query_embedding = generate_embedding(user_query)
+            
+            # Use traces to find in the archive – here we leverage that user might want historical context
+            relevant_texts_from_archive, scores = self.retrieve_from_archive_with_traces(
+                user_query,
+                similarity_threshold=0.5)  # Adjust threshold based on your system
+            
+            return relevant_texts_from_archive
+        
+        else:
+            logging.info("Found relevant in active memory.")
+            return relevant_texts_from_active
+
+    def retrieve_from_archive_with_traces(self, query_text=None):
+        """Retrieve from archive database using traces from recent memories (via similarity or metadata)."""
+        if not self.has_chosen_retrieval_path:  # Placeholder for your system's context
+            logging.warning("No chosen retrieval path; check active memory first.")
+            return []
+        
+        # Here, use the query_text to search in the archive. If it doesn't warrant, you might still trigger this.
+        embedding_vector = generate_embedding(query_text)
+        
+        # Query SQL-based archive using full-text or vector similarity (if embedded there) – example:
+        archive_conn = sqlite3.connect(ARCHIVE_DB_PATH)
+        cursor = archive_conn.cursor()
+        
+        try:
+            if query_text:  # Use text-based search for keywords
+                keyword_results = cursor.execute(
+                    "SELECT * FROM memory_archive WHERE text_content LIKE ?", ('%' + query_text + '%',)  
+                )
+                
+            elif embedding_vector is not None:  # Use vector similarity (if archive has vectors stored)
+                # But since SQLite doesn't natively support high-D vector search, you might use a library like FAISS or scikit-learn for this.
+                pass
+            
+        except Exception as e:
+            logging.error(f"Error in archive retrieval: {e}")
+        
+        # Better to keep the archive DB separate with appropriate indexes for text and metadata
+        # For example, if using PostgreSQL vector extension, you could do direct embedding similarity search.
+
+    def generate_unique_id(self):
+        """Generate a unique ID for each memory entry."""
+        import uuid
+        return str(uuid.uuid4())
+
+# Additional Notes:
+- **Embedding Generation:** Use a library like `sentence-transformers` (e.g., All-Mini embeddings) or spaCy to create embeddings. ChromaDB supports adding these if configured properly.
+- **Usage Tracking in Queries:** During inference, when responding to user queries, log the similarity scores for retrieved chunks and mark them as used with timestamps. This can be done by updating metadata:
+  ```python
+  def update_memory_usage(doc_id):
+      # Update active memory timestamp or usage count based on query results.
+      pass
+
+# Example: When a query is handled successfully, update the relevant memories to keep them fresh.
+
+- **Scalability Concerns:** ChromaDB's performance degrades with large datasets due to increased indexing and search times. Pruning helps by reducing active DB size, but as data grows, you might need to partition based on topics or time, use approximate nearest neighbors (ANN) for the archive via tools like FAISS/Oldemankay/FlaxIVFAB, or implement caching.
+- **Archive Organization:** The SQL database should have a schema with:
+  - `text_content`: Stores the original memory text.
+  - `embedding`: Optional if you're doing full-text search; but embedding can be stored for vector-based retrieval in the archive.
+  - `metadata`: JSON field to store details like source, topic tags, dates, etc., allowing organized queries (e.g., by date or keyword).
+- **Heuristic Tuning:** The decision to query the archive should be refined based on your AI's behavior. Use metrics like:
+  - Time gap between last active use and current context.
+  - Confidence score from ChromaDB results: If all similarities are low, it might warrant an archival search.
+
+### Potential Improvements for Human-Likeness
+- **Time-Based Decay:** Humans forget things over time unless reinforced. In AI, you can simulate this with a decay function on similarity scores during archiving.
+- **Cued Recall:** When the archive is queried (e.g., via traces), use context from the user query to retrieve memories. This could involve:
+  - Extracting key entities or topics using NER/Text classification.
+  - Using these cues in SQL queries (e.g., WHERE metadata LIKE '%event%' AND timestamp < '2024-01-01').
+
+### Example Workflow
+1. User interacts with AI: Memory entry created and added to ChromaDB (active memory).
+2. During query handling, if the retrieved memories are recent or relevant, keep them in active DB.
+3. Periodically run pruning:
+   - Check for old/unused entries.
+   - Move them to archive SQL DB.
+4. If a new query needs historical context, use traces from ChromaDB (e.g., embeddings of similar topics) to search the archive.
+
+This framework can help manage data growth efficiently while retaining human-like memory recall patterns. We are using large language and vector models, so we need to integrate this pruning into the application layer for scalability and relevance preservation.

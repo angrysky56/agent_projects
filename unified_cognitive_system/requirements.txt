@@ -1,0 +1,7 @@
+"""
+COMPASS Framework - Requirements
+
+Dependencies for the COMPASS cognitive system.
+"""
+
+numpy>=1.24.0

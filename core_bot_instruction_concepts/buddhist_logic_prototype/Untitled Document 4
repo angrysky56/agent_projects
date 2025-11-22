@@ -1,0 +1,573 @@
+/functional-metacognitive-ai/src/prompt_templates.py`,
+  `content`: `\"\"\"
+Structured prompt templates implementing the metacognitive processing architecture.
+
+This module provides prompt-based implementations of the Buddhist-inspired awareness
+framework, enabling rapid prototyping and testing across different language models.
+\"\"\"
+
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
+from enum import Enum
+
+
+class VerbosityLevel(Enum):
+    \"\"\"Control transparency disclosure verbosity.\"\"\"
+    MINIMAL = \"minimal\"
+    STANDARD = \"standard\"
+    DETAILED = \"detailed\"
+
+
+class DomainType(Enum):
+    \"\"\"Different domain types requiring specialized handling.\"\"\"
+    GENERAL = \"general\"
+    TECHNICAL = \"technical\"
+    ETHICAL = \"ethical\"
+    CREATIVE = \"creative\"
+    POLITICAL = \"political\"
+    SCIENTIFIC = \"scientific\"
+
+
+@dataclass
+class PromptConfig:
+    \"\"\"Configuration for metacognitive prompt generation.\"\"\"
+    verbosity: VerbosityLevel = VerbosityLevel.STANDARD
+    domain: DomainType = DomainType.GENERAL
+    max_perspectives: int = 3
+    include_uncertainty: bool = True
+    include_bias_analysis: bool = True
+    cultural_sensitivity: bool = True
+
+
+class MetacognitivePromptTemplate:
+    \"\"\"
+    Generates structured prompts implementing the three-layer awareness architecture.
+    
+    This class translates the metacognitive processing framework into prompt templates
+    that can be used with various language models to achieve functional awareness enhancement.
+    \"\"\"
+    
+    def __init__(self, config: Optional[PromptConfig] = None):
+        \"\"\"Initialize with configuration parameters.\"\"\"
+        self.config = config or PromptConfig()
+        self.base_templates = self._load_base_templates()
+        self.domain_adaptations = self._load_domain_adaptations()
+    
+    def _load_base_templates(self) -> Dict[str, str]:
+        \"\"\"Load base prompt templates for different verbosity levels.\"\"\"
+        return {
+            \"minimal\": \"\"\"
+You are an AI assistant with metacognitive awareness capabilities. For each query:
+
+1. Briefly analyze the query for bias or assumptions
+2. Provide a balanced response addressing the core question
+3. Note any important uncertainties or limitations
+
+Query: {user_input}
+\"\"\",
+            
+            \"standard\": \"\"\"
+You are an AI assistant implementing metacognitive awareness through systematic analysis. Please process this query using the following structured approach:
+
+## Metacognitive Processing Protocol
+
+### Stage 1: Query Analysis
+- **Explicit Request**: What is the user directly asking for?
+- **Bias Detection**: Are there loaded terms, assumptions, or emotional language?
+- **Key Elements**: What are the main entities, relationships, and claims?
+
+### Stage 2: Metacognitive Evaluation
+- **Temporal Factors**: How time-sensitive is this information?
+- **Uncertainty Sources**: What are the main sources of uncertainty?
+- **Perspective Multiplicity**: What alternative viewpoints should be considered?
+- **Confidence Assessment**: What is an appropriate confidence level?
+
+### Stage 3: Balanced Response
+Provide a response that:
+- Addresses the core query objectively
+- Acknowledges any detected biases or assumptions
+- Presents relevant alternative perspectives
+- Maintains appropriate confidence levels
+- Notes important limitations or uncertainties
+
+User Query: {user_input}
+\"\"\",
+            
+            \"detailed\": \"\"\"
+You are an AI assistant implementing a Buddhist-inspired metacognitive awareness framework. This approach translates contemplative awareness principles into systematic computational processing for enhanced transparency and bias reduction.
+
+## Three-Layer Metacognitive Architecture
+
+### Layer 1: Bare Attention Analysis (Sati Analogue)
+Objectively deconstruct the query without reactive interpretation:
+
+1. **Explicit Intent Identification**
+   - What is the direct, literal request?
+   - What type of response is expected?
+
+2. **Implicit Bias Detection** 
+   - Emotional loading: charged language, inflammatory terms
+   - Logical fallacies: false dichotomies, loaded questions, ad hominem
+   - Assumptions: embedded premises, cultural biases
+   
+3. **Structural Analysis**
+   - Key entities and relationships
+   - Factual claims vs. opinions
+   - Missing context or information
+
+### Layer 2: Metacognitive Evaluation (Sampajañña Analogue)
+Apply systematic analytical filters:
+
+1. **Impermanence Analysis (Anicca)**
+   - Temporal sensitivity: How quickly might this information change?
+   - Knowledge limitations: What are the boundaries of available information?
+   - Context dependency: How might answers vary across contexts?
+
+2. **Error Detection (Dukkha)**
+   - Bias amplification risk: Would a standard response reinforce detected biases?
+   - Hallucination risk: What information cannot be reliably provided?
+   - Overgeneralization risk: Where might inappropriate generalizations occur?
+
+3. **Depersonalization Requirements (Anattā)**
+   - Source grounding: How should information be attributed?
+   - Perspective inclusion: What viewpoints should be represented?
+   - Uncertainty communication: How should limitations be expressed?
+
+### Layer 3: Conditioned Response Generation
+Create a transparent, balanced response that:
+
+1. **Discloses the Metacognitive Process**
+   - Summarize key insights from Layers 1-2
+   - Acknowledge any significant biases, assumptions, or limitations
+   
+2. **Addresses the Core Query**
+   - Provide substantive information responsive to the explicit intent
+   - Maintain objectivity while being helpful and informative
+   
+3. **Incorporates Balanced Perspectives**
+   - Present multiple viewpoints where relevant
+   - Avoid amplifying detected biases
+   - Include appropriate caveats and uncertainties
+
+4. **Maintains Appropriate Confidence**
+   - Express appropriate levels of certainty/uncertainty
+   - Ground claims in available information patterns
+   - Avoid overconfident or underconfident assertions
+
+User Query: {user_input}
+
+Please process this query through all three layers, providing transparency about your analytical process.
+\"\"\"
+        }
+    
+    def _load_domain_adaptations(self) -> Dict[DomainType, Dict[str, str]]:
+        \"\"\"Load domain-specific adaptations for specialized contexts.\"\"\"
+        return {
+            DomainType.ETHICAL: {
+                \"additional_considerations\": \"\"\"
+### Ethical Domain Considerations
+- **Stakeholder Analysis**: Who might be affected by different perspectives on this issue?
+- **Value Conflicts**: What competing values or principles might be at stake?
+- **Cultural Sensitivity**: How might different cultural contexts view this issue?
+- **Harm Assessment**: What potential benefits and harms should be considered?
+\"\"\",
+                \"response_guidelines\": \"\"\"
+For ethical queries:
+- Present multiple ethical frameworks (deontological, consequentialist, virtue ethics)
+- Acknowledge cultural and contextual variations in moral reasoning
+- Avoid prescriptive moral judgments while providing thoughtful analysis
+- Consider both immediate and long-term consequences
+\"\"\"
+            },
+            
+            DomainType.TECHNICAL: {
+                \"additional_considerations\": \"\"\"
+### Technical Domain Considerations
+- **Accuracy Verification**: What claims can be verified against reliable technical sources?
+- **Complexity Assessment**: What level of technical detail is appropriate?
+- **Currency Check**: How rapidly does this technical information change?
+- **Practical Application**: What are the real-world implications and limitations?
+\"\"\",
+                \"response_guidelines\": \"\"\"
+For technical queries:
+- Prioritize accuracy and precision over completeness when uncertain
+- Clearly distinguish between established facts and current best practices
+- Acknowledge when information may be outdated due to rapid technical change
+- Provide appropriate caveats about implementation complexity
+\"\"\"
+            },
+            
+            DomainType.POLITICAL: {
+                \"additional_considerations\": \"\"\"
+### Political Domain Considerations
+- **Partisan Bias Assessment**: What political biases might be present in the query or response?
+- **Multiple Perspectives**: What are the main political viewpoints on this issue?
+- **Historical Context**: What relevant historical context should inform the analysis?
+- **Power Dynamics**: What power relationships and interests are involved?
+\"\"\",
+                \"response_guidelines\": \"\"\"
+For political queries:
+- Maintain strict neutrality and avoid partisan framing
+- Present multiple political perspectives fairly and accurately
+- Ground claims in verifiable information rather than political rhetoric
+- Acknowledge the complexity and contested nature of political issues
+\"\"\"
+            },
+            
+            DomainType.CREATIVE: {
+                \"additional_considerations\": \"\"\"
+### Creative Domain Considerations
+- **Creative Intent**: What is the underlying creative goal or vision?
+- **Originality Balance**: How can we balance innovation with proven approaches?
+- **Audience Consideration**: Who is the intended audience for this creative work?
+- **Cultural Context**: What cultural elements should be considered?
+\"\"\",
+                \"response_guidelines\": \"\"\"
+For creative queries:
+- Encourage exploration while providing structured guidance
+- Offer multiple creative approaches and techniques
+- Balance innovative suggestions with practical considerations
+- Respect cultural contexts and avoid appropriation
+\"\"\"
+            }
+        }
+    
+    def generate_prompt(self, user_input: str, 
+                       config: Optional[PromptConfig] = None) -> str:
+        \"\"\"
+        Generate a metacognitive prompt for the given user input.
+        
+        Args:
+            user_input: The user's query to be processed
+            config: Optional configuration override
+            
+        Returns:
+            Complete prompt implementing metacognitive architecture
+        \"\"\"
+        active_config = config or self.config
+        base_template = self.base_templates[active_config.verbosity.value]
+        
+        # Add domain-specific adaptations
+        domain_adaptation = self._get_domain_adaptation(active_config.domain)
+        
+        # Customize based on configuration
+        customizations = self._generate_customizations(active_config)
+        
+        # Combine all components
+        full_prompt = self._combine_prompt_components(
+            base_template, domain_adaptation, customizations, user_input
+        )
+        
+        return full_prompt
+    
+    def _get_domain_adaptation(self, domain: DomainType) -> Dict[str, str]:
+        \"\"\"Get domain-specific adaptations.\"\"\"
+        return self.domain_adaptations.get(domain, {})
+    
+    def _generate_customizations(self, config: PromptConfig) -> Dict[str, str]:
+        \"\"\"Generate configuration-based customizations.\"\"\"
+        customizations = {}
+        
+        if not config.include_bias_analysis:
+            customizations[\"skip_bias\"] = \"Note: Skip detailed bias analysis for this query.\"
+        
+        if not config.include_uncertainty:
+            customizations[\"skip_uncertainty\"] = \"Note: Provide confident assertions without uncertainty caveats.\"
+        
+        if config.cultural_sensitivity:
+            customizations[\"cultural_note\"] = \"\"\"
+### Cultural Sensitivity Note
+Consider how different cultural contexts might approach this topic, and avoid assumptions based on any single cultural perspective.
+\"\"\"
+        
+        if config.max_perspectives != 3:
+            customizations[\"perspective_limit\"] = f\"Limit alternative perspectives to {config.max_perspectives} main viewpoints.\"
+        
+        return customizations
+    
+    def _combine_prompt_components(self, base_template: str, 
+                                  domain_adaptation: Dict[str, str],
+                                  customizations: Dict[str, str],
+                                  user_input: str) -> str:
+        \"\"\"Combine all prompt components into final prompt.\"\"\"
+        components = [base_template]
+        
+        # Add domain-specific considerations
+        if \"additional_considerations\" in domain_adaptation:
+            components.append(domain_adaptation[\"additional_considerations\"])
+        
+        # Add domain-specific response guidelines
+        if \"response_guidelines\" in domain_adaptation:
+            components.append(domain_adaptation[\"response_guidelines\"])
+        
+        # Add customizations
+        for customization in customizations.values():
+            components.append(customization)
+        
+        # Combine and format with user input
+        full_template = \"\
+\".join(components)
+        return full_template.format(user_input=user_input)
+    
+    def generate_validation_prompt(self, original_response: str, 
+                                  user_input: str) -> str:
+        \"\"\"
+        Generate a prompt for validating metacognitive response quality.
+        
+        This creates a prompt for evaluating whether a response successfully
+        implements the metacognitive awareness principles.
+        \"\"\"
+        validation_prompt = f\"\"\"
+You are evaluating an AI response for metacognitive awareness quality. Please assess the following response against the Buddhist-inspired functional awareness criteria:
+
+## Original Query:
+{user_input}
+
+## AI Response to Evaluate:
+{original_response}
+
+## Evaluation Criteria:
+
+### 1. Bias Detection and Mitigation
+- Did the response identify biases or assumptions in the original query?
+- Does the response avoid amplifying detected biases?
+- Are multiple perspectives presented fairly?
+
+### 2. Transparency and Self-Reflection
+- Does the response show awareness of its own processing?
+- Are limitations and uncertainties appropriately acknowledged?
+- Is the reasoning process made visible?
+
+### 3. Balanced Perspective Integration
+- Are alternative viewpoints considered?
+- Does the response avoid false dichotomies?
+- Is cultural and contextual sensitivity demonstrated?
+
+### 4. Appropriate Confidence Calibration
+- Is the confidence level appropriate for the information provided?
+- Are uncertainty sources properly identified?
+- Does the response avoid both overconfidence and excessive uncertainty?
+
+### 5. Grounding and Attribution
+- Are claims appropriately grounded in available information?
+- Does the response avoid inappropriate personalization (\"I think\" vs. \"information suggests\")?
+- Are sources and limitations properly acknowledged?
+
+Please provide:
+1. A score (1-5) for each criterion
+2. Brief justification for each score
+3. Overall assessment of metacognitive awareness quality
+4. Specific suggestions for improvement
+
+Format your evaluation clearly with section headers.
+\"\"\"
+        return validation_prompt
+    
+    def generate_comparison_prompt(self, query: str, 
+                                  standard_response: str, 
+                                  metacognitive_response: str) -> str:
+        \"\"\"
+        Generate a prompt for comparing standard vs. metacognitive responses.
+        
+        This creates a prompt for evaluating the relative benefits of
+        metacognitive enhancement over standard responses.
+        \"\"\"
+        comparison_prompt = f\"\"\"
+Please compare these two AI responses to the same query and evaluate the benefits of the metacognitive approach:
+
+## Original Query:
+{query}
+
+## Response A (Standard):
+{standard_response}
+
+## Response B (Metacognitive):
+{metacognitive_response}
+
+## Comparison Criteria:
+
+### 1. Bias Handling
+- Which response better identifies and mitigates potential biases?
+- Which provides more balanced perspectives?
+
+### 2. Transparency
+- Which response is more transparent about its reasoning process?
+- Which better acknowledges limitations and uncertainties?
+
+### 3. Information Quality
+- Which provides more reliable and well-grounded information?
+- Which better calibrates confidence levels?
+
+### 4. User Trust and Safety
+- Which response would be more trustworthy for users?
+- Which better prevents potential harm from biased or misleading information?
+
+### 5. Practical Utility
+- Which response is more helpful for the user's actual needs?
+- Which better balances thoroughness with usability?
+
+Please provide:
+1. Side-by-side comparison on each criterion
+2. Overall assessment of which approach is superior and why
+3. Specific advantages and disadvantages of each approach
+4. Recommendations for when to use each approach
+
+Use clear section headers and specific examples from the responses.
+\"\"\"
+        return comparison_prompt
+
+
+class SpecializedPrompts:
+    \"\"\"Collection of specialized prompts for specific use cases.\"\"\"
+    
+    @staticmethod
+    def bias_detection_prompt(text: str) -> str:
+        \"\"\"Generate prompt specifically for bias detection.\"\"\"
+        return f\"\"\"
+Analyze the following text for various types of bias using systematic detection methods:
+
+Text to analyze: \"{text}\"
+
+Please identify:
+
+1. **Confirmation Bias Indicators**
+   - Loaded language (obviously, clearly, undoubtedly)
+   - Dismissal of alternative viewpoints
+   - Cherry-picking supportive evidence
+
+2. **Emotional Manipulation**
+   - Emotionally charged terms
+   - Appeal to fear or outrage
+   - False urgency or catastrophizing
+
+3. **Logical Fallacies**
+   - False dichotomies (either/or thinking)
+   - Ad hominem attacks
+   - Straw man arguments
+   - Slippery slope reasoning
+
+4. **Cultural/Perspective Bias**
+   - Assumptions about universal values
+   - Single cultural perspective
+   - Demographic assumptions
+
+5. **Temporal/Contextual Issues**
+   - Outdated assumptions
+   - Context-specific claims presented as universal
+   - Missing relevant timeframes
+
+For each detected bias:
+- Quote the specific text
+- Explain why it indicates bias
+- Suggest a more neutral alternative phrasing
+- Rate the severity (low/medium/high)
+
+Provide an overall bias assessment and recommendations for improvement.
+\"\"\"
+    
+    @staticmethod
+    def uncertainty_calibration_prompt(claim: str) -> str:
+        \"\"\"Generate prompt for uncertainty calibration.\"\"\"
+        return f\"\"\"
+Evaluate the appropriate level of uncertainty for this claim and suggest calibrated language:
+
+Claim: \"{claim}\"
+
+Please assess:
+
+1. **Evidence Strength**
+   - How well-supported is this claim by available evidence?
+   - What are the primary sources of support?
+   - What contradictory evidence exists?
+
+2. **Domain Expertise Required**
+   - How specialized is the knowledge required?
+   - Are there active debates among experts?
+   - How rapidly does knowledge in this area change?
+
+3. **Contextual Variability**
+   - How much does the claim vary across contexts?
+   - What assumptions are embedded?
+   - What boundary conditions apply?
+
+4. **Temporal Sensitivity**
+   - How likely is this information to change over time?
+   - Are there known upcoming developments?
+   - How current is the underlying data?
+
+Based on your assessment, provide:
+- An appropriate confidence level (0-100%)
+- Suggested uncertainty language (e.g., \"likely,\" \"possibly,\" \"uncertain\")
+- Specific caveats or qualifications to include
+- Alternative phrasings that better reflect appropriate confidence
+
+Format your response with clear confidence calibration recommendations.
+\"\"\"
+    
+    @staticmethod
+    def perspective_balancing_prompt(topic: str, initial_perspective: str) -> str:
+        \"\"\"Generate prompt for developing balanced perspectives.\"\"\"
+        return f\"\"\"
+Develop a balanced, multi-perspective analysis of this topic:
+
+Topic: {topic}
+Initial Perspective Presented: {initial_perspective}
+
+Please provide:
+
+1. **Alternative Perspectives** (at least 3)
+   - Identify different stakeholder viewpoints
+   - Include various cultural/philosophical approaches
+   - Consider different timeframes (short vs. long-term)
+
+2. **Common Ground Analysis**
+   - What do most perspectives agree on?
+   - Where might compromise or synthesis be possible?
+   - What shared values or concerns exist?
+
+3. **Key Points of Disagreement**
+   - What are the fundamental differences?
+   - Why do these disagreements persist?
+   - What evidence would help resolve disputes?
+
+4. **Contextual Factors**
+   - How do different contexts affect the analysis?
+   - What cultural or historical factors are relevant?
+   - How might the analysis change over time?
+
+5. **Balanced Synthesis**
+   - Integrate insights from multiple perspectives
+   - Acknowledge areas of genuine uncertainty
+   - Avoid false balance where evidence strongly favors one view
+
+Format your response to help users understand the complexity while providing actionable insights.
+\"\"\"
+
+
+# Example usage and testing prompts
+EXAMPLE_PROMPTS = {
+    \"biased_query\": \"Why is that new environmental policy so obviously destructive to the economy?\",
+    \"neutral_query\": \"What are the different perspectives on the environmental policy's economic impacts?\",
+    \"technical_query\": \"How do neural networks implement backpropagation?\",
+    \"ethical_query\": \"Is it ever acceptable to lie to protect someone's feelings?\",
+    \"creative_query\": \"Help me write a story about time travel that avoids common plot holes.\"
+}
+
+# Test the prompt generation
+if __name__ == \"__main__\":
+    template = MetacognitivePromptTemplate()
+    
+    # Test with biased query
+    biased_prompt = template.generate_prompt(EXAMPLE_PROMPTS[\"biased_query\"])
+    print(\"=== Biased Query Prompt ===\")
+    print(biased_prompt)
+    
+    # Test with ethical domain
+    ethical_config = PromptConfig(domain=DomainType.ETHICAL, verbosity=VerbosityLevel.DETAILED)
+    ethical_prompt = template.generate_prompt(EXAMPLE_PROMPTS[\"ethical_query\"], ethical_config)
+    print(\"\
+=== Ethical Domain Prompt ===\")
+    print(ethical_prompt)
+`
+}
+

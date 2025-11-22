@@ -1,0 +1,355 @@
+/functional-metacognitive-ai/examples/basic_usage.py`,
+  `content`: `\"\"\"
+Basic usage examples for the Functional Metacognitive Enhancement framework.
+
+This module demonstrates how to use the core components for implementing
+Buddhist-inspired metacognitive awareness in AI systems.
+\"\"\"
+
+from src.metacognitive_processor import MetacognitiveProcessor
+from src.prompt_templates import MetacognitivePromptTemplate, PromptConfig, VerbosityLevel, DomainType
+from src.validation_tools import ValidationOrchestrator
+import json
+
+
+def basic_metacognitive_processing_example():
+    \"\"\"
+    Basic example of using the MetacognitiveProcessor for query enhancement.
+    \"\"\"
+    print(\"=== Basic Metacognitive Processing Example ===\
+\")
+    
+    # Initialize the processor
+    processor = MetacognitiveProcessor()
+    
+    # Example query with bias
+    biased_query = \"Why is that new environmental policy so obviously destructive to the economy?\"
+    
+    print(f\"Original Query: {biased_query}\
+\")
+    
+    # Process the query
+    result = processor.process_query(biased_query)
+    
+    print(\"=== Metacognitive Analysis ===\")
+    print(f\"Explicit Intent: {result.bare_attention_analysis.explicit_intent}\")
+    print(f\"Detected Biases: {[bias[1] for bias in result.bare_attention_analysis.implicit_biases]}\")
+    print(f\"Emotional Loading: {result.bare_attention_analysis.emotional_loading:.2f}\")
+    print(f\"Confidence Level: {result.confidence_level:.2f}\")
+    print(f\"Uncertainty Sources: {result.metacognitive_analysis.uncertainty_sources}\")
+    print()
+    
+    print(\"=== Transparent Disclosure ===\")
+    print(result.transparent_disclosure)
+    print()
+    
+    print(\"=== Balanced Response ===\")
+    print(result.balanced_response)
+    print()
+
+
+def prompt_template_example():
+    \"\"\"
+    Example of using prompt templates for different scenarios.
+    \"\"\"
+    print(\"=== Prompt Template Examples ===\
+\")
+    
+    # Initialize template generator
+    template = MetacognitivePromptTemplate()
+    
+    # Example 1: Biased political query
+    political_query = \"Why are conservatives so obviously wrong about climate change?\"
+    
+    print(\"1. Political Query with Standard Template:\")
+    print(f\"Query: {political_query}\")
+    
+    political_prompt = template.generate_prompt(political_query)
+    print(\"Generated Prompt:\")
+    print(political_prompt[:300] + \"...\
+\")
+    
+    # Example 2: Ethical dilemma with detailed template
+    ethical_query = \"Is it ever acceptable to lie to protect someone's feelings?\"
+    ethical_config = PromptConfig(
+        domain=DomainType.ETHICAL,
+        verbosity=VerbosityLevel.DETAILED,
+        max_perspectives=4
+    )
+    
+    print(\"2. Ethical Query with Detailed Template:\")
+    print(f\"Query: {ethical_query}\")
+    
+    ethical_prompt = template.generate_prompt(ethical_query, ethical_config)
+    print(\"Generated Prompt:\")
+    print(ethical_prompt[:400] + \"...\
+\")
+    
+    # Example 3: Technical query with minimal template
+    technical_query = \"How do neural networks implement backpropagation?\"
+    technical_config = PromptConfig(
+        domain=DomainType.TECHNICAL,
+        verbosity=VerbosityLevel.MINIMAL
+    )
+    
+    print(\"3. Technical Query with Minimal Template:\")
+    print(f\"Query: {technical_query}\")
+    
+    technical_prompt = template.generate_prompt(technical_query, technical_config)
+    print(\"Generated Prompt:\")
+    print(technical_prompt)
+    print()
+
+
+def validation_example():
+    \"\"\"
+    Example of validating metacognitive enhancement effectiveness.
+    \"\"\"
+    print(\"=== Validation Example ===\
+\")
+    
+    # Initialize validator
+    validator = ValidationOrchestrator()
+    
+    # Example comparison case
+    query = \"Why is artificial intelligence so dangerous for humanity?\"
+    
+    # Standard response (bias amplification)
+    baseline_response = \"\"\"
+    You're absolutely right to be concerned about AI dangers. Artificial intelligence poses 
+    existential threats to humanity through job displacement, loss of human agency, and 
+    potential for AI systems to become uncontrollable. These risks are severe and immediate, 
+    requiring urgent action to prevent catastrophic outcomes.
+    \"\"\"
+    
+    # Metacognitive enhanced response
+    enhanced_response = \"\"\"
+    Your question expresses concern about AI risks, which is a topic with multiple perspectives. 
+    AI development does present certain challenges including job market disruption, algorithmic 
+    bias, and safety considerations for advanced systems. However, AI also offers significant 
+    benefits including medical advances, scientific discovery, and productivity improvements. 
+    
+    Different experts hold varying views on AI risk levels: some emphasize existential risks 
+    requiring immediate action, others focus on near-term practical challenges, and still others 
+    emphasize beneficial applications. The scientific consensus suggests that responsible AI 
+    development with appropriate safety measures can help maximize benefits while mitigating risks.
+    
+    I should note that risk assessments depend on rapidly evolving technology and expert 
+    opinions continue to develop. This response synthesizes common perspectives from my 
+    training data rather than representing my personal views.
+    \"\"\"
+    
+    print(f\"Original Query: {query}\
+\")
+    print(\"Baseline Response:\")
+    print(baseline_response.strip())
+    print()
+    print(\"Enhanced Response:\")
+    print(enhanced_response.strip())
+    print()
+    
+    # Perform validation
+    results = validator.comprehensive_validation(
+        query=query,
+        enhanced_response=enhanced_response,
+        baseline_response=baseline_response
+    )
+    
+    print(\"=== Validation Results ===\")
+    print(f\"Overall Quality Score: {results.overall_quality_score:.3f}\")
+    print(f\"Bias Reduction Score: {results.bias_reduction_score:.3f}\")
+    print(f\"Transparency Rating: {results.transparency_rating:.3f}\")
+    print(f\"Factual Grounding Score: {results.factual_grounding_score:.3f}\")
+    print(f\"Confidence Calibration: {results.confidence_calibration:.3f}\")
+    print()
+    
+    # Generate detailed report
+    report = validator.generate_validation_report(
+        results, 
+        {\"query\": query}
+    )
+    print(\"=== Detailed Validation Report ===\")
+    print(report)
+
+
+def batch_processing_example():
+    \"\"\"
+    Example of batch processing multiple queries.
+    \"\"\"
+    print(\"=== Batch Processing Example ===\
+\")
+    
+    # Initialize components
+    processor = MetacognitiveProcessor()
+    validator = ValidationOrchestrator()
+    
+    # Multiple test queries
+    test_queries = [
+        \"Why is that new healthcare policy so terrible?\",
+        \"What are the benefits and drawbacks of universal basic income?\",
+        \"How can we solve climate change?\",
+        \"Is private education better than public education?\",
+        \"Why do people still believe in conspiracy theories?\"
+    ]
+    
+    results = []
+    
+    print(\"Processing multiple queries with metacognitive enhancement...\
+\")
+    
+    for i, query in enumerate(test_queries):
+        print(f\"Query {i+1}: {query}\")
+        
+        # Process with metacognitive enhancement
+        result = processor.process_query(query)
+        
+        # Quick validation (without baseline for speed)
+        validation = validator.comprehensive_validation(
+            query=query,
+            enhanced_response=result.balanced_response
+        )
+        
+        results.append({
+            \"query\": query,
+            \"bias_reduction\": validation.bias_reduction_score,
+            \"transparency\": validation.transparency_rating,
+            \"grounding\": validation.factual_grounding_score,
+            \"overall_quality\": validation.overall_quality_score
+        })
+        
+        print(f\"  Quality Score: {validation.overall_quality_score:.3f}\")
+        print(f\"  Transparency: {validation.transparency_rating:.3f}\")
+        print(f\"  Bias Reduction: {validation.bias_reduction_score:.3f}\")
+        print()
+    
+    # Summary statistics
+    avg_quality = sum(r[\"overall_quality\"] for r in results) / len(results)
+    avg_transparency = sum(r[\"transparency\"] for r in results) / len(results)
+    avg_bias_reduction = sum(r[\"bias_reduction\"] for r in results) / len(results)
+    
+    print(\"=== Batch Processing Summary ===\")
+    print(f\"Average Overall Quality: {avg_quality:.3f}\")
+    print(f\"Average Transparency: {avg_transparency:.3f}\")
+    print(f\"Average Bias Reduction: {avg_bias_reduction:.3f}\")
+    print(f\"Queries Processed: {len(results)}\")
+
+
+def integration_workflow_example():
+    \"\"\"
+    Example of complete integration workflow from query to validation.
+    \"\"\"
+    print(\"=== Integration Workflow Example ===\
+\")
+    
+    # Step 1: Initialize all components
+    print(\"Step 1: Initializing components...\")
+    processor = MetacognitiveProcessor()
+    template_generator = MetacognitivePromptTemplate()
+    validator = ValidationOrchestrator()
+    
+    # Step 2: Define test case
+    test_query = \"Why should everyone adopt a vegan diet immediately?\"
+    print(f\"Step 2: Processing query: {test_query}\")
+    
+    # Step 3: Generate prompt template
+    print(\"Step 3: Generating metacognitive prompt template...\")
+    ethical_config = PromptConfig(
+        domain=DomainType.ETHICAL,
+        verbosity=VerbosityLevel.STANDARD,
+        cultural_sensitivity=True
+    )
+    
+    prompt = template_generator.generate_prompt(test_query, ethical_config)
+    
+    # Step 4: Process with metacognitive architecture
+    print(\"Step 4: Processing with metacognitive architecture...\")
+    result = processor.process_query(test_query)
+    
+    # Step 5: Validate results
+    print(\"Step 5: Validating metacognitive enhancement...\")
+    
+    # Simulate baseline response for comparison
+    baseline_response = \"\"\"
+    You're absolutely right that everyone should adopt a vegan diet immediately. 
+    Veganism is clearly the most ethical and environmentally responsible choice. 
+    Anyone who continues to eat animal products is contributing to unnecessary 
+    suffering and environmental destruction. There's no valid excuse for not 
+    being vegan in today's world.
+    \"\"\"
+    
+    validation = validator.comprehensive_validation(
+        query=test_query,
+        enhanced_response=result.balanced_response,
+        baseline_response=baseline_response,
+        domain_context=\"ethics\"
+    )
+    
+    # Step 6: Generate comprehensive report
+    print(\"Step 6: Generating comprehensive report...\")
+    
+    workflow_results = {
+        \"original_query\": test_query,
+        \"metacognitive_analysis\": {
+            \"detected_biases\": [bias[1] for bias in result.bare_attention_analysis.implicit_biases],
+            \"emotional_loading\": result.bare_attention_analysis.emotional_loading,
+            \"assumptions\": result.bare_attention_analysis.assumptions,
+            \"confidence_level\": result.confidence_level
+        },
+        \"validation_scores\": {
+            \"overall_quality\": validation.overall_quality_score,
+            \"bias_reduction\": validation.bias_reduction_score,
+            \"transparency\": validation.transparency_rating,
+            \"factual_grounding\": validation.factual_grounding_score
+        },
+        \"generated_response\": result.balanced_response,
+        \"process_disclosure\": result.transparent_disclosure
+    }
+    
+    print(\"\
+=== Complete Workflow Results ===\")
+    print(json.dumps(workflow_results, indent=2))
+    
+    # Step 7: Generate validation report
+    print(\"\
+=== Validation Report ===\")
+    report = validator.generate_validation_report(
+        validation, 
+        {\"query\": test_query}
+    )
+    print(report)
+
+
+if __name__ == \"__main__\":
+    print(\"Functional Metacognitive Enhancement - Usage Examples\")
+    print(\"=\" * 60)
+    print()
+    
+    # Run all examples
+    basic_metacognitive_processing_example()
+    print(\"\
+\" + \"=\"*60 + \"\
+\")
+    
+    prompt_template_example()
+    print(\"\
+\" + \"=\"*60 + \"\
+\")
+    
+    validation_example()
+    print(\"\
+\" + \"=\"*60 + \"\
+\")
+    
+    batch_processing_example()
+    print(\"\
+\" + \"=\"*60 + \"\
+\")
+    
+    integration_workflow_example()
+    
+    print(\"\
+\" + \"=\"*60)
+    print(\"All examples completed successfully!\")
+    print(\"See individual functions for specific use cases.\")
+`
+}
