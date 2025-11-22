@@ -1,0 +1,95 @@
+import React from 'react';
+import { Sidebar } from './components/Sidebar';
+import { ChatInterface } from './components/ChatInterface';
+import { ProviderSelector } from './components/ProviderSelector';
+import { useAppStore } from './store';
+import './index.css';
+
+function App() {
+    const { useCompass, toggleCompass, currentView } = useAppStore();
+
+    return (
+        <div className="flex h-screen">
+            <Sidebar />
+
+            <div className="flex-1 flex flex-col lg:flex-row">
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col h-full overflow-hidden">
+                    {currentView === 'chat' && <ChatInterface />}
+
+                    {currentView === 'mcp' && (
+                        <div className="flex-1 p-8 overflow-y-auto">
+                            <h2 className="text-2xl font-bold text-white mb-6">MCP Tools</h2>
+                            <div className="glass-card p-6 text-center">
+                                <p className="text-slate-300 mb-4">MCP Server Management coming soon.</p>
+                                <p className="text-sm text-slate-400">
+                                    Configure your MCP servers in the backend configuration or use the API endpoints.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {currentView === 'settings' && (
+                        <div className="flex-1 p-8 overflow-y-auto">
+                            <h2 className="text-2xl font-bold text-white mb-6">Settings</h2>
+                            <div className="glass-card p-6">
+                                <h3 className="text-lg font-semibold text-white mb-4">Application Settings</h3>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                                        <div>
+                                            <p className="font-medium text-slate-200">COMPASS Auto-Configuration</p>
+                                            <p className="text-xs text-slate-400">Automatically optimize framework parameters</p>
+                                        </div>
+                                        <div className="w-10 h-6 bg-primary-600 rounded-full relative">
+                                            <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Panel - Only show in chat view */}
+                {currentView === 'chat' && (
+                    <div className="w-full lg:w-80 border-l border-white/10 p-4 space-y-4 overflow-y-auto custom-scrollbar bg-slate-900/30">
+                        <ProviderSelector />
+
+                        {/* COMPASS Toggle */}
+                        <div className="glass-card p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-semibold text-slate-300">COMPASS</h3>
+                                <button
+                                    onClick={toggleCompass}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${useCompass ? 'bg-primary-600' : 'bg-slate-600'
+                                        }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useCompass ? 'translate-x-6' : 'translate-x-1'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+                            <p className="text-xs text-slate-400">
+                                {useCompass
+                                    ? 'Auto-configuring cognitive frameworks based on task complexity'
+                                    : 'Using direct LLM responses'}
+                            </p>
+                        </div>
+
+                        {/* Info Card */}
+                        <div className="glass-card p-4">
+                            <h3 className="text-sm font-semibold text-slate-300 mb-2">About</h3>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                COMPASS integrates 6 cognitive frameworks for advanced AI reasoning:
+                                SLAP, SHAPE, SMART, oMCD, Self-Discover, and Integrated Intelligence.
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default App;

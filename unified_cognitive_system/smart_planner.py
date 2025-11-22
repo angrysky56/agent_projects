@@ -52,6 +52,10 @@ class SMARTPlanner:
         objectives = []
 
         # Analyze task to identify objectives
+        if isinstance(task, dict):
+            # Handle case where full semantic prompt is passed
+            task = task.get("enriched_prompt", task.get("prompt", str(task)))
+
         task_lower = task.lower()
 
         # Default: create at least one objective

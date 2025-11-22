@@ -147,14 +147,17 @@ class COMPASS:
             # Layer 2: Planning - SMART Objectives
             # ================================================================
             self.logger.info("Layer 2: Creating SMART objectives")
-            objectives = self.smart_planner.create_objectives_from_task(semantic_prompt, context)
+            # Extract enriched prompt string for components that expect text
+            task_text = semantic_prompt["enriched_prompt"]
+
+            objectives = self.smart_planner.create_objectives_from_task(task_text, context)
             self.objectives.extend(objectives)
 
             # ================================================================
             # Layer 3: Reasoning - SLAP Pipeline
             # ================================================================
             self.logger.info("Layer 3: Building SLAP reasoning structure")
-            reasoning_plan = self.slap_pipeline.create_reasoning_plan(semantic_prompt, objectives)
+            reasoning_plan = self.slap_pipeline.create_reasoning_plan(task_text, objectives)
 
             # ================================================================
             # Layer 4: Metacognitive Control - Self-Discover with oMCD
@@ -171,13 +174,13 @@ class COMPASS:
                 self.logger.debug(f"Iteration {iteration + 1}/{max_iterations}")
 
                 # Select reasoning modules (Self-Discover)
-                selected_modules = self.self_discover_engine.select_reasoning_modules(semantic_prompt, self.reflections)
+                selected_modules = self.self_discover_engine.select_reasoning_modules(task_text, self.reflections)
 
                 # Determine resource allocation (oMCD)
                 resource_allocation = self.omcd_controller.determine_resource_allocation(current_state=context, importance=self._calculate_importance(objectives), available_resources=self.current_resources)
 
                 # Execute reasoning with allocated resources
-                action, observation = self._execute_reasoning_step(semantic_prompt, reasoning_plan, selected_modules, resource_allocation, context)
+                action, observation = self._execute_reasoning_step(task_text, reasoning_plan, selected_modules, resource_allocation, context)
 
                 trajectory.add_step(action, observation)
 

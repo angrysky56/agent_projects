@@ -84,7 +84,54 @@ print(f"Solution: {result['solution']}")
 print(f"Score: {result['score']:.3f}")
 ```
 
-### Advanced Usage
+### 🖥️ Web UI (New!)
+Experience COMPASS through a modern web interface with multi-provider LLM support.
+
+**Status**: *Work in Progress (WIP) - Functional & Useable*
+
+#### Quick Start
+The easiest way to get started is using the automated setup script:
+
+```bash
+./setup.sh
+```
+
+This script will:
+1.  Check for dependencies (Python, Node.js, `uv`)
+2.  Set up the backend virtual environment
+3.  Install backend dependencies
+4.  Install frontend dependencies
+5.  Start both servers automatically
+
+#### Manual Setup & Running
+If you prefer to run components manually:
+
+**1. Backend Server**
+```bash
+cd backend
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+python api_server.py
+```
+*Server runs on http://localhost:8000*
+
+**2. Frontend Client**
+```bash
+cd web-ui
+npm install
+npm run dev
+```
+*Client runs on http://localhost:3000*
+
+#### Features
+- 🤖 **Multi-Provider LLM**: Support for Ollama (local/cloud), LM Studio, OpenAI, and Anthropic
+- 🧠 **Visual Reasoning**: Watch COMPASS think in real-time with progress visualization
+- 🔧 **Auto-Configuration**: Smart parameter optimization based on task complexity
+- 💬 **Natural Language**: Get clear, explained answers backed by deep cognitive analysis
+- 🌑 **Modern UI**: Clean, dark-mode interface designed for focus
+
+### Python API (Advanced Usage)
 
 ```python
 from compass_framework import create_compass
