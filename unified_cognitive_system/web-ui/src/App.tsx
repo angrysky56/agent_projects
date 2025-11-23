@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ProviderSelector } from './components/ProviderSelector';
@@ -77,13 +77,29 @@ function App() {
                             </p>
                         </div>
 
-                        {/* Info Card */}
-                        <div className="glass-card p-4">
-                            <h3 className="text-sm font-semibold text-slate-300 mb-2">About</h3>
-                            <p className="text-xs text-slate-400 leading-relaxed">
-                                COMPASS integrates 6 cognitive frameworks for advanced AI reasoning:
-                                SLAP, SHAPE, SMART, oMCD, Self-Discover, and Integrated Intelligence.
-                            </p>
+                        {/* COMPASS Trace / Info */}
+                        <div className="glass-card p-4 flex-1 overflow-hidden flex flex-col min-h-0">
+                            <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center justify-between">
+                                <span>System Trace</span>
+                                {useAppStore.getState().compassTrace.length > 0 && (
+                                    <span className="text-xs text-primary-400 animate-pulse">● Live</span>
+                                )}
+                            </h3>
+
+                            {useAppStore.getState().compassTrace.length > 0 ? (
+                                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+                                    {useAppStore.getState().compassTrace.map((step, idx) => (
+                                        <div key={idx} className="text-xs font-mono text-slate-400 border-l-2 border-slate-700 pl-2 py-0.5 animate-fadeIn">
+                                            {step}
+                                        </div>
+                                    ))}
+                                    <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
+                                </div>
+                            ) : (
+                                <div className="text-xs text-slate-500 italic">
+                                    Waiting for task execution...
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

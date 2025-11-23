@@ -9,7 +9,8 @@ from typing import Dict, List, Optional, Tuple
 import re
 from collections import defaultdict
 
-from utils import COMPASSLogger
+from .config import SHAPEConfig
+from .utils import COMPASSLogger
 
 
 class SHAPEProcessor:

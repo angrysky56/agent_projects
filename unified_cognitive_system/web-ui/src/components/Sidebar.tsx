@@ -1,11 +1,57 @@
-import React from 'react';
-import { Brain, MessageSquare, Settings, Wrench, Menu, X } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Brain, MessageSquare, Settings, Wrench, Menu, X, Plus } from 'lucide-react';
 import { useAppStore } from '../store';
+import { api } from '../services/api';
 import clsx from 'clsx';
 
 export const Sidebar: React.FC = () => {
-    const { sidebarOpen, toggleSidebar, useCompass, toggleCompass, currentView, setCurrentView } = useAppStore();
+    const {
+        sidebarOpen,
+        toggleSidebar,
+        useCompass,
+        toggleCompass,
+        currentView,
+        setCurrentView,
+        conversations,
+        setConversations,
+        currentConversationId,
+        loadConversation,
+        clearMessages,
+        setCurrentConversationId
+    } = useAppStore();
 
+    useEffect(() => {
+        loadConversations();
+    }, []);
+
+    const loadConversations = async () => {
+        try {
+            const data = await api.getConversations();
+            setConversations(data);
+        } catch (error) {
+            console.error('Failed to load conversations:', error);
+        }
+    };
+
+    const handleNewChat = () => {
+        clearMessages();
+        setCurrentConversationId(null);
+        setCurrentView('chat');
+        if (window.innerWidth < 1024) toggleSidebar();
+    };
+
+    const handleSelectConversation = async (id: string) => {
+        try {
+            const data = await api.getConversation(id);
+            // Transform backend messages to frontend format if needed
+            // Assuming backend returns { messages: [...] }
+            loadConversation(id, data.messages);
+            setCurrentView('chat');
+            if (window.innerWidth < 1024) toggleSidebar();
+        } catch (error) {
+            console.error('Failed to load conversation:', error);
+        }
+    };
 
     return (
         <>
@@ -27,7 +73,7 @@ export const Sidebar: React.FC = () => {
             >
                 <div className="flex flex-col h-full p-4">
                     {/* Logo */}
-                    <div className="flex items-center gap-3 mb-8">
+                    <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
                             <Brain className="w-6 h-6 text-white" />
                         </div>
@@ -37,32 +83,42 @@ export const Sidebar: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* New Chat Button */}
+                    <button
+                        onClick={handleNewChat}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-6 rounded-lg
+                                 bg-primary-600 hover:bg-primary-500 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-primary-500/25"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>New Chat</span>
+                    </button>
+
                     {/* Navigation */}
-                    <nav className="flex-1 space-y-2">
+                    <nav className="space-y-1 mb-6">
                         <button
                             onClick={() => setCurrentView('chat')}
                             className={clsx(
-                                'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
-                                currentView === 'chat'
-                                    ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
-                                    : 'text-slate-300 hover:bg-white/5'
+                                'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200',
+                                currentView === 'chat' && !currentConversationId
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                             )}
                         >
-                            <MessageSquare className="w-5 h-5" />
-                            <span className="font-medium">Chat</span>
+                            <MessageSquare className="w-4 h-4" />
+                            <span className="text-sm font-medium">Current Chat</span>
                         </button>
 
                         <button
                             onClick={toggleCompass}
                             className={clsx(
-                                'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
+                                'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200',
                                 useCompass
                                     ? 'bg-primary-500/10 text-primary-300'
-                                    : 'text-slate-300 hover:bg-white/5'
+                                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                             )}
                         >
-                            <Brain className="w-5 h-5" />
-                            <span className="font-medium">COMPASS</span>
+                            <Brain className="w-4 h-4" />
+                            <span className="text-sm font-medium">COMPASS</span>
                             <div className={clsx(
                                 'ml-auto w-2 h-2 rounded-full',
                                 useCompass ? 'bg-green-500 animate-pulse' : 'bg-slate-600'
@@ -72,32 +128,60 @@ export const Sidebar: React.FC = () => {
                         <button
                             onClick={() => setCurrentView('mcp')}
                             className={clsx(
-                                'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
+                                'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200',
                                 currentView === 'mcp'
-                                    ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
-                                    : 'text-slate-300 hover:bg-white/5'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                             )}
                         >
-                            <Wrench className="w-5 h-5" />
-                            <span className="font-medium">MCP Tools</span>
+                            <Wrench className="w-4 h-4" />
+                            <span className="text-sm font-medium">MCP Tools</span>
                         </button>
 
                         <button
                             onClick={() => setCurrentView('settings')}
                             className={clsx(
-                                'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
+                                'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200',
                                 currentView === 'settings'
-                                    ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
-                                    : 'text-slate-300 hover:bg-white/5'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                             )}
                         >
-                            <Settings className="w-5 h-5" />
-                            <span className="font-medium">Settings</span>
+                            <Settings className="w-4 h-4" />
+                            <span className="text-sm font-medium">Settings</span>
                         </button>
                     </nav>
 
+                    {/* Chat History */}
+                    <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">
+                            History
+                        </h3>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1 pr-2">
+                            {conversations.map((conv) => (
+                                <button
+                                    key={conv.id}
+                                    onClick={() => handleSelectConversation(conv.id)}
+                                    className={clsx(
+                                        'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors truncate',
+                                        currentConversationId === conv.id
+                                            ? 'bg-white/10 text-white'
+                                            : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                                    )}
+                                >
+                                    {conv.title || 'New Conversation'}
+                                </button>
+                            ))}
+                            {conversations.length === 0 && (
+                                <div className="text-xs text-slate-600 px-3 italic">
+                                    No history yet
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Footer */}
-                    <div className="pt-4 border-t border-white/10">
+                    <div className="pt-4 border-t border-white/10 mt-auto">
                         <div className="text-xs text-slate-500 text-center">
                             COMPASS v0.1.0
                         </div>

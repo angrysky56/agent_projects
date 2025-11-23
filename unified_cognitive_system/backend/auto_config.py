@@ -4,18 +4,18 @@ AI-driven auto-configuration system for COMPASS framework.
 Intelligently selects optimal framework parameters based on task analysis.
 """
 
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass, field
+from typing import Dict, Any, Optional
+from dataclasses import dataclass
 from enum import Enum
 import re
 import logging
 
 # Import COMPASS config
-import sys
-import os
+# import sys
+# import os
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from config import COMPASSConfig, create_custom_config
+# sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from .core.config import COMPASSConfig, create_custom_config
 
 logger = logging.getLogger(__name__)
 

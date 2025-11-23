@@ -9,7 +9,7 @@ import logging
 import math
 import numpy as np
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 import json
 from pathlib import Path
@@ -232,6 +232,7 @@ class SelfReflection:
     content: str
     insights: List[str]
     improvements: List[str]
+    context_awareness: Dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = None
 
     def __post_init__(self):
@@ -240,7 +241,34 @@ class SelfReflection:
 
     def to_dict(self) -> Dict:
         """Convert reflection to dictionary."""
-        return {"trajectory_id": self.trajectory_id, "content": self.content, "insights": self.insights, "improvements": self.improvements, "timestamp": self.timestamp.isoformat()}
+        return {"trajectory_id": self.trajectory_id, "content": self.content, "insights": self.insights, "improvements": self.improvements, "context_awareness": self.context_awareness, "timestamp": self.timestamp.isoformat()}
+
+
+@dataclass
+class Goal:
+    """Represents a reasoning goal for the Executive Controller."""
+
+    id: str
+    description: str
+    priority: float  # 0.0 to 1.0
+    created_at: datetime = None
+    status: str = "active"  # active, completed, suspended, failed
+    parent_id: Optional[str] = None
+    subgoals: List[str] = field(default_factory=list)
+    progress: float = 0.0
+
+    def to_dict(self) -> Dict:
+        return {"id": self.id, "description": self.description, "priority": self.priority, "created_at": self.created_at.isoformat(), "status": self.status, "parent_id": self.parent_id, "subgoals": self.subgoals, "progress": self.progress}
+
+
+@dataclass
+class RepresentationState:
+    """Tracks the current representation state."""
+
+    current_type: str
+    confidence: float
+    history: List[str]
+    reason_for_selection: str
 
 
 @dataclass

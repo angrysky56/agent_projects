@@ -8,15 +8,13 @@ from typing import Dict, Any, Optional, List, AsyncIterator
 from dataclasses import dataclass, asdict
 import asyncio
 import logging
-import sys
-import os
 
 # Add parent directory to path for COMPASS imports
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from compass_framework import create_compass, COMPASS
-from config import COMPASSConfig
-from auto_config import auto_configure, FrameworkActivation, TaskComplexity
+from .core.compass_framework import create_compass, COMPASS
+from .core.config import COMPASSConfig
+from .auto_config import auto_configure, FrameworkActivation
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +56,7 @@ class COMPASSAPIWrapper:
         self.current_config: Optional[COMPASSConfig] = None
         self.current_activation: Optional[FrameworkActivation] = None
 
-    async def process_task(self, task_description: str, context: Optional[Dict[str, Any]] = None, user_config_overrides: Optional[Dict[str, Any]] = None, max_iterations: int = 10) -> AsyncIterator[ProcessingUpdate | COMPASSResult]:
+    async def process_task(self, task_description: str, context: Optional[Dict[str, Any]] = None, user_config_overrides: Optional[Dict[str, Any]] = None, max_iterations: int = 10, llm_provider: Optional[Any] = None) -> AsyncIterator[ProcessingUpdate | COMPASSResult]:
         """
         Process a task through the COMPASS framework with streaming updates.
 
@@ -67,6 +65,7 @@ class COMPASSAPIWrapper:
             context: Optional context information
             user_config_overrides: Manual configuration overrides
             max_iterations: Maximum reasoning iterations
+            llm_provider: Optional LLM provider instance
 
         Yields:
             ProcessingUpdate objects during processing
@@ -85,7 +84,7 @@ class COMPASSAPIWrapper:
             yield ProcessingUpdate(stage="configuration", message=f"Configuration optimized (Complexity: {activation.get_active_count()}/6 frameworks)", progress=0.1, data={"activated_frameworks": asdict(activation), "config_summary": self._get_config_summary(config)})
 
             # Initialize COMPASS
-            self.compass = create_compass(config)
+            self.compass = create_compass(config, llm_provider)
 
             yield ProcessingUpdate(stage="compass_init", message="COMPASS framework initialized", progress=0.2)
 
@@ -95,10 +94,32 @@ class COMPASSAPIWrapper:
 
             yield ProcessingUpdate(stage="processing", message="Processing task through cognitive pipeline...", progress=0.3)
 
+            # Emit thinking step: Starting COMPASS
+            yield ProcessingUpdate(stage="thinking", message="Starting COMPASS cognitive processing", progress=0.35, data={"thinking_step": "initialization", "content": "Beginning multi-framework analysis"})
+
             # Run COMPASS processing (this is synchronous in the current implementation)
             # We'll wrap it in an executor to make it async
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(None, self.compass.process_task, task_description, context or {}, max_iterations)
+
+            # Capture thinking by monkey-patching logger temporarily
+            thinking_steps = []
+            original_info = self.compass.logger.info
+
+            def capture_thinking(msg):
+                thinking_steps.append(msg)
+                original_info(msg)
+
+            self.compass.logger.info = capture_thinking
+
+            try:
+                result = await loop.run_in_executor(None, self.compass.process_task, task_description, context or {}, max_iterations)
+            finally:
+                self.compass.logger.info = original_info
+
+            # Emit thinking steps
+            for i, step in enumerate(thinking_steps):
+                progress = 0.4 + (i / len(thinking_steps)) * 0.4  # 0.4 to 0.8
+                yield ProcessingUpdate(stage="thinking", message=step, progress=progress, data={"thinking_step": f"step_{i}", "content": step})
 
             yield ProcessingUpdate(stage="complete", message="Task processing complete", progress=1.0)
 

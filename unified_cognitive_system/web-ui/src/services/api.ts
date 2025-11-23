@@ -1,6 +1,6 @@
 // API service for backend communication
 
-import type { ChatRequest, ProviderInfo, MCPTool, MCPServer } from '../types';
+import type { ChatRequest, ProviderInfo, MCPTool } from '../types';
 
 const API_BASE = '';  // Vite proxy handles this
 
@@ -52,6 +52,17 @@ export const api = {
                 server_name: serverName,
             }),
         });
+        return res.json();
+    },
+
+    // Conversation endpoints
+    async getConversations() {
+        const res = await fetch(`${API_BASE}/api/conversations`);
+        return res.json();
+    },
+
+    async getConversation(conversationId: string) {
+        const res = await fetch(`${API_BASE}/api/conversations/${conversationId}`);
         return res.json();
     },
 

@@ -5,11 +5,11 @@ Implements the Self-Discover framework with actor-evaluator-reflection loop,
 reasoning module selection, and continuous improvement through self-evaluation.
 """
 
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime
+from typing import Dict, Any, List, Optional
 import random
 
-from utils import COMPASSLogger, Trajectory, SelfReflection
+from .config import SelfDiscoverConfig
+from .utils import COMPASSLogger, Trajectory, SelfReflection
 
 
 # Reasoning modules from self_discover_TyMod.txt
@@ -64,26 +64,28 @@ class SelfDiscoverEngine:
     through self-evaluation and adaptation.
     """
 
-    def __init__(self, config, logger: Optional[COMPASSLogger] = None):
+    def __init__(self, config: SelfDiscoverConfig, logger: Optional[COMPASSLogger] = None, llm_provider: Optional[Any] = None):
         """
-        Initialize Self-Discover engine.
+        Initialize Self-Discover Engine.
 
         Args:
-            config: SelfDiscoverConfig instance
+            config: Configuration object
             logger: Optional logger instance
+            llm_provider: Optional LLM provider instance
         """
         self.config = config
         self.logger = logger or COMPASSLogger("SelfDiscover")
+        self.llm_provider = llm_provider
 
         # Module effectiveness tracking
         self.module_effectiveness = {i: 0.5 for i in REASONING_MODULES.keys()}
 
         # Memory of past reflections
-        self.memory = []
+        self.memory: List[SelfReflection] = []
 
         self.logger.info("Self-Discover engine initialized")
 
-    def select_reasoning_modules(self, task: str, reflections: List[SelfReflection]) -> List[int]:
+    def select_reasoning_modules(self, task: str, reflections: List[SelfReflection], context: Optional[Dict] = None) -> List[int]:
         """
         Select the best reasoning modules for the given task.
 
@@ -92,6 +94,7 @@ class SelfDiscoverEngine:
         Args:
             task: Task description
             reflections: Past self-reflections
+            context: Optional context dictionary
 
         Returns:
             List of selected module indices
@@ -112,7 +115,7 @@ class SelfDiscoverEngine:
 
         elif strategy == "adaptive":
             # Adaptive selection based on task and past performance
-            selected = self._adaptive_selection(task, reflections)
+            selected = self._adaptive_selection(task, reflections, context)
 
         else:
             raise ValueError(f"Unknown module selection strategy: {strategy}")
@@ -120,13 +123,14 @@ class SelfDiscoverEngine:
         self.logger.debug(f"Selected modules: {selected}")
         return selected
 
-    def _adaptive_selection(self, task: str, reflections: List[SelfReflection]) -> List[int]:
+    def _adaptive_selection(self, task: str, reflections: List[SelfReflection], context: Optional[Dict] = None) -> List[int]:
         """
         Adaptively select modules based on task characteristics and past performance.
 
         Args:
             task: Task description
             reflections: Past reflections
+            context: Optional context dictionary
 
         Returns:
             Selected module indices
@@ -155,6 +159,19 @@ class SelfDiscoverEngine:
 
         if "quick" in task_lower or "urgent" in task_lower:
             weights[32] = weights.get(32, 0.5) * 2.0  # Time-sensitive
+
+        # Context-aware boosting
+        if context:
+            if context.get("complexity") == "high":
+                weights[9] = weights.get(9, 0.5) * 1.5  # Decomposition
+                weights[13] = weights.get(13, 0.5) * 1.5  # Systems thinking
+
+            if context.get("uncertainty") == "high":
+                weights[14] = weights.get(14, 0.5) * 1.5  # Risk analysis
+                weights[28] = weights.get(28, 0.5) * 1.5  # Decision under uncertainty
+
+            if context.get("domain") == "creative":
+                weights[11] = weights.get(11, 0.5) * 1.5  # Creative thinking
 
         # Consider recent reflection insights
         if reflections:
@@ -198,7 +215,7 @@ class SelfDiscoverEngine:
         # - Longer trajectories with progress get higher scores
         # - Completion of objectives increases score
 
-        base_score = min(0.5, len(trajectory) * 0.05)  # Up to 0.5 for trajectory length
+        base_score = min(0.5, 0.4 + len(trajectory) * 0.05)  # Base confidence for active trajectory
 
         # Check if objectives are met
         if objectives:
@@ -208,6 +225,10 @@ class SelfDiscoverEngine:
             objective_score = 0.3  # Default if no objectives
 
         total_score = base_score + objective_score
+
+        # Boost score if LLM provider is present (assuming higher quality reasoning)
+        if self.llm_provider:
+            total_score = min(1.0, total_score * 1.2)
 
         self.logger.debug(f"Trajectory score: {total_score:.3f}")
         return min(1.0, total_score)
@@ -231,7 +252,10 @@ class SelfDiscoverEngine:
         # Generate reflection content
         content = self._build_reflection_content(trajectory, score, insights, improvements)
 
-        reflection = SelfReflection(trajectory_id=len(self.memory), content=content, insights=insights, improvements=improvements)
+        # Assess context awareness
+        context_awareness = self._assess_context_awareness(trajectory, objectives)
+
+        reflection = SelfReflection(trajectory_id=len(self.memory), content=content, insights=insights, improvements=improvements, context_awareness=context_awareness)
 
         # Update memory
         self.memory.append(reflection)
@@ -243,6 +267,29 @@ class SelfDiscoverEngine:
 
         self.logger.debug(f"Generated reflection with {len(insights)} insights")
         return reflection
+
+    def assess_task_solvability(self, task: str) -> Dict[str, Any]:
+        """
+        Assess the solvability of a task (Self-Awareness).
+
+        Args:
+            task: Task description
+
+        Returns:
+            Dictionary with solvability assessment
+        """
+        # Heuristic assessment
+        complexity_score = 0.5
+        if len(task.split()) > 50:
+            complexity_score += 0.2
+        if any(word in task.lower() for word in ["impossible", "unknown", "undecidable"]):
+            complexity_score += 0.3
+
+        return {"solvability_score": max(0.0, 1.0 - complexity_score), "estimated_complexity": complexity_score, "missing_info_detected": "?" in task or "find" in task.lower()}
+
+    def _assess_context_awareness(self, trajectory: Trajectory, objectives: List) -> Dict[str, Any]:
+        """Assess context awareness based on trajectory."""
+        return {"adaptability_score": 0.5 + (0.1 * len(trajectory) if len(trajectory) < 10 else -0.1), "objective_alignment": sum(1 for obj in objectives if obj.is_on_track) / len(objectives) if objectives else 0.0, "resource_efficiency": 1.0 / (len(trajectory) + 1)}
 
     def _extract_insights(self, trajectory: Trajectory, score: float, objectives: List) -> List[str]:
         """Extract insights from trajectory."""

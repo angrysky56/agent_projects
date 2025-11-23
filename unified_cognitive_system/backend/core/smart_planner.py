@@ -7,8 +7,8 @@ feasibility assessment, timeline management, and progress monitoring.
 
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
-
-from utils import COMPASSLogger, ObjectiveState
+from .config import SMARTConfig
+from .utils import COMPASSLogger, ObjectiveState
 
 
 class SMARTPlanner:

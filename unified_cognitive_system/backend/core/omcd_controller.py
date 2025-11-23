@@ -5,11 +5,13 @@ Implements the oMCD model for optimal resource allocation based on
 confidence-cost tradeoffs and metacognitive control.
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, List
 import math
 import numpy as np
+import uuid
 
-from utils import COMPASSLogger, sigmoid, confidence_from_delta_mu, calculate_cost, calculate_benefit, update_precision, validate_non_negative, validate_positive
+from .config import oMCDConfig
+from .utils import COMPASSLogger, confidence_from_delta_mu, calculate_cost, calculate_benefit, update_precision, validate_non_negative, validate_positive, Goal
 
 
 class oMCDController:
@@ -35,6 +37,9 @@ class oMCDController:
         self.current_confidence = 0.5
         self.total_resources_allocated = 0.0
         self.decision_history = []
+
+        # Goal Management (CGRA)
+        self.goal_stack: List[Goal] = []
 
         self.logger.info("oMCD controller initialized")
 
@@ -146,6 +151,13 @@ class oMCDController:
         # Dynamic threshold that decreases over time
         threshold = self.config.threshold_omega * math.exp(-0.1 * iteration)
 
+        # Check goal status if goals exist
+        if self.goal_stack:
+            current_goal = self.goal_stack[-1]
+            if current_goal.status == "completed":
+                self.logger.debug(f"Stopping: Goal '{current_goal.description}' completed")
+                return True
+
         should_stop = (
             Q_stop >= threshold or confidence >= self.config.min_confidence or current_score >= 0.95  # Near-perfect score
         )
@@ -154,6 +166,78 @@ class oMCDController:
             self.logger.debug(f"Stopping criterion met: Q={Q_stop:.3f}, threshold={threshold:.3f}, confidence={confidence:.3f}")
 
         return should_stop
+
+    def establish_goal(self, description: str, priority: float = 0.5, parent_id: Optional[str] = None) -> Goal:
+        """
+        Establish a new reasoning goal.
+
+        Args:
+            description: Goal description
+            priority: Priority level (0.0-1.0)
+            parent_id: Optional parent goal ID
+
+        Returns:
+            Created Goal object
+        """
+        goal_id = str(uuid.uuid4())
+        goal = Goal(id=goal_id, description=description, priority=priority, parent_id=parent_id)
+
+        self.goal_stack.append(goal)
+        self.logger.info(f"Established goal: {description} (ID: {goal_id})")
+
+        # Link to parent if exists
+        if parent_id:
+            for g in self.goal_stack:
+                if g.id == parent_id:
+                    g.subgoals.append(goal_id)
+                    break
+
+        return goal
+
+    def adjust_goal(self, goal_id: str, modifications: Dict) -> Optional[Goal]:
+        """
+        Adjust an existing goal.
+
+        Args:
+            goal_id: ID of goal to adjust
+            modifications: Dictionary of fields to update
+
+        Returns:
+            Updated Goal object or None if not found
+        """
+        for goal in self.goal_stack:
+            if goal.id == goal_id:
+                for key, value in modifications.items():
+                    if hasattr(goal, key):
+                        setattr(goal, key, value)
+                self.logger.info(f"Adjusted goal {goal_id}: {modifications}")
+                return goal
+        return None
+
+    def complete_goal(self, goal_id: str) -> bool:
+        """
+        Mark a goal as completed.
+
+        Args:
+            goal_id: ID of goal to complete
+
+        Returns:
+            True if successful
+        """
+        goal = self.adjust_goal(goal_id, {"status": "completed", "progress": 100.0})
+        if goal:
+            # If it's the current active goal (top of stack), pop it?
+            # Or keep in history? For now, we keep it but status is completed.
+            return True
+        return False
+
+    def get_current_goal(self) -> Optional[Goal]:
+        """Get the current active goal (top of stack)."""
+        # Return last non-completed goal
+        for goal in reversed(self.goal_stack):
+            if goal.status == "active":
+                return goal
+        return None
 
     def get_confidence_trajectory(self) -> list:
         """

@@ -6,7 +6,14 @@ export interface Message {
     role: 'user' | 'assistant' | 'system';
     content: string;
     timestamp?: number;
-    reasoning?: ReasoningTrace;
+    reasoning?: {
+        updates?: ProcessingUpdate[];
+        result?: COMPASSResult;
+    };
+    thinking?: Array<{
+        timestamp: string | null;
+        content: string;
+    }>;
 }
 
 export interface ProviderInfo {

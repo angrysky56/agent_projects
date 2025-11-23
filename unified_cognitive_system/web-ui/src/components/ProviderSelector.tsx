@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Wifi, WifiOff } from 'lucide-react';
+import { Check, Wifi } from 'lucide-react';
 import { useAppStore } from '../store';
 import { api } from '../services/api';
 import type { ProviderType, ProviderInfo } from '../types';

@@ -8,12 +8,10 @@ Scrutiny → Derivation → Rule-Based → Model → Semantic Formalization
 Includes truth advancement calculation and MCTS-based entity identification.
 """
 
-from typing import Dict, List, Optional, Any, Tuple
-from collections import deque
-import math
-import random
+from typing import Dict, List, Optional, Any
 
-from utils import COMPASSLogger, advancement_score
+from .config import SLAPConfig
+from .utils import COMPASSLogger, advancement_score
 
 
 class SLAPPipeline:
@@ -43,47 +41,44 @@ class SLAPPipeline:
 
         self.logger.info("SLAP pipeline initialized")
 
-    def create_reasoning_plan(self, task: str, objectives: List) -> Dict[str, Any]:
+    def create_reasoning_plan(self, task: str, objectives: List, representation_type: str = "sequential") -> Dict[str, Any]:
         """
         Create a structured reasoning plan using the SLAP pipeline.
 
         Processes through: C → R → F → S → D → RB → M → SF
+        Adapts structure based on representation_type.
 
         Args:
             task: Task description
             objectives: List of objectives
+            representation_type: Type of representation (sequential, hierarchical, network, causal)
 
         Returns:
             Reasoning plan dictionary
         """
-        self.logger.info("Creating SLAP reasoning plan")
+        self.logger.info(f"Creating SLAP reasoning plan (Type: {representation_type})")
 
         # Process through each stage
         plan = {}
+        plan["type"] = representation_type
 
-        # 1. Conceptualization (C)
+        # 1. Conceptualization (C) - Common start
         plan["conceptualization"] = self._conceptualize(task)
 
-        # 2. Representation (R)
-        plan["representation"] = self._represent(plan["conceptualization"])
+        # Branch based on representation type
+        if representation_type == "hierarchical":
+            self._build_hierarchical_plan(plan, task, objectives)
+        elif representation_type == "network":
+            self._build_network_plan(plan, task, objectives)
+        elif representation_type == "causal":
+            self._build_causal_plan(plan, task, objectives)
+        else:
+            # Default Sequential Flow
+            self._build_sequential_plan(plan, task, objectives)
 
-        # 3. Facts (F)
-        plan["facts"] = self._identify_facts(plan["representation"])
-
-        # 4. Scrutiny (S)
-        plan["scrutiny"] = self._scrutinize(plan["facts"], objectives)
-
-        # 5. Derivation (D)
-        plan["derivation"] = self._derive(plan["facts"], plan["scrutiny"])
-
-        # 6. Rule-Based (RB)
-        plan["rules"] = self._apply_rules(plan["derivation"])
-
-        # 7. Model (M)
-        plan["model"] = self._build_model(plan["rules"])
-
+        # Common Finalization
         # 8. Semantic Formalization (SF)
-        plan["semantic"] = self._formalize_semantics(plan["model"])
+        plan["semantic"] = self._formalize_semantics(plan.get("model", {}))
 
         # Calculate advancement
         advancement = self._calculate_advancement()
@@ -94,6 +89,69 @@ class SLAPPipeline:
 
         self.logger.info(f"SLAP plan created with advancement score: {advancement:.3f}")
         return plan
+
+    def _build_sequential_plan(self, plan: Dict, task: str, objectives: List):
+        """Build standard sequential plan."""
+        # 2. Representation (R)
+        plan["representation"] = self._represent(plan["conceptualization"])
+        # 3. Facts (F)
+        plan["facts"] = self._identify_facts(plan["representation"])
+        # 4. Scrutiny (S)
+        plan["scrutiny"] = self._scrutinize(plan["facts"], objectives)
+        # 5. Derivation (D)
+        plan["derivation"] = self._derive(plan["facts"], plan["scrutiny"])
+        # 6. Rule-Based (RB)
+        plan["rules"] = self._apply_rules(plan["derivation"])
+        # 7. Model (M)
+        plan["model"] = self._build_model(plan["rules"], structure="sequential")
+
+    def _build_hierarchical_plan(self, plan: Dict, task: str, objectives: List):
+        """Build hierarchical decomposition plan."""
+        # 2. Representation (R) - Tree structure
+        plan["representation"] = self._represent(plan["conceptualization"])
+        plan["representation"]["structure"] = {"type": "tree", "depth": 3}
+
+        # 3. Facts (F) - Component facts
+        plan["facts"] = self._identify_facts(plan["representation"])
+
+        # 4. Decomposition (replaces standard Scrutiny/Derivation flow)
+        plan["decomposition"] = {"root": task, "subtasks": [f"Subtask {i}: {concept}" for i, concept in enumerate(plan["conceptualization"]["related_concepts"])]}
+
+        # 5. Scrutiny of decomposition
+        plan["scrutiny"] = self._scrutinize(plan["facts"], objectives)
+
+        # 7. Model (M)
+        plan["model"] = {"components": plan["decomposition"]["subtasks"], "structure": "hierarchical", "completeness": 0.8}
+
+    def _build_network_plan(self, plan: Dict, task: str, objectives: List):
+        """Build network/graph plan."""
+        # 2. Representation (R) - Graph structure
+        plan["representation"] = self._represent(plan["conceptualization"])
+        plan["representation"]["structure"] = {"type": "graph", "nodes": 10, "edges": 15}
+
+        # 3. Facts (F) - Node/Edge facts
+        plan["facts"] = self._identify_facts(plan["representation"])
+
+        # 4. Connectivity Analysis
+        plan["connectivity"] = {"hubs": [plan["conceptualization"]["primary_concept"]], "links": plan["representation"]["relationships"]}
+
+        # 7. Model (M)
+        plan["model"] = {"nodes": plan["connectivity"]["hubs"] + plan["conceptualization"]["related_concepts"], "structure": "network", "completeness": 0.7}
+
+    def _build_causal_plan(self, plan: Dict, task: str, objectives: List):
+        """Build causal chain plan."""
+        # 2. Representation (R) - Chain structure
+        plan["representation"] = self._represent(plan["conceptualization"])
+        plan["representation"]["structure"] = {"type": "chain", "direction": "forward"}
+
+        # 3. Facts (F) - Causal facts
+        plan["facts"] = self._identify_facts(plan["representation"])
+
+        # 4. Causal Analysis
+        plan["causal_chain"] = {"root_cause": "Unknown", "effects": plan["conceptualization"]["related_concepts"]}
+
+        # 7. Model (M)
+        plan["model"] = {"chain": plan["causal_chain"], "structure": "causal", "completeness": 0.6}
 
     def _conceptualize(self, task: str) -> Dict:
         """
@@ -254,12 +312,13 @@ class SLAPPipeline:
 
         return rules
 
-    def _build_model(self, rules: Dict) -> Dict:
+    def _build_model(self, rules: Dict, structure: str = "hierarchical") -> Dict:
         """
         Stage 7: Model - Create structured representation.
 
         Args:
             rules: Rule application results
+            structure: Structure type
 
         Returns:
             Model dictionary
@@ -267,9 +326,9 @@ class SLAPPipeline:
         self.logger.debug("Stage 7: Model Building")
 
         model = {
-            "components": rules["applied_rules"],
-            "structure": "hierarchical",
-            "completeness": len(rules["applied_rules"]) / 3.0,  # Relative to expected rules
+            "components": rules.get("applied_rules", []),
+            "structure": structure,
+            "completeness": len(rules.get("applied_rules", [])) / 3.0 if "applied_rules" in rules else 0.5,
         }
 
         # Update improvement score

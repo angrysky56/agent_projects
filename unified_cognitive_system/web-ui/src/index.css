@@ -45,6 +45,7 @@
 }
 
 @layer components {
+
   /* Glassmorphic Card */
   .glass-card {
     @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl;
@@ -104,8 +105,15 @@
   }
 
   @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
   }
 
   /* Pulse Animation for Active State */
@@ -184,5 +192,70 @@
   /* Backdrop blur variations */
   .backdrop-glass {
     backdrop-filter: blur(12px) saturate(180%);
+  }
+
+  /* Animation for thinking steps */
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+}
+
+@layer components {
+
+  /* Markdown Content Styling - Global Overrides */
+  .markdown-content>*:first-child {
+    margin-top: 0;
+  }
+
+  .markdown-content h1 {
+    @apply mt-8 mb-4 text-2xl font-bold text-slate-100 tracking-tight;
+  }
+
+  .markdown-content h2 {
+    @apply mt-6 mb-3 text-xl font-semibold text-slate-100 tracking-tight;
+  }
+
+  .markdown-content h3 {
+    @apply mt-5 mb-2 text-lg font-medium text-slate-200;
+  }
+
+  .markdown-content p {
+    @apply mb-4 leading-7 text-slate-300;
+  }
+
+  .markdown-content ul {
+    @apply mb-4 list-disc list-outside ml-5 space-y-2 text-slate-300;
+  }
+
+  .markdown-content ol {
+    @apply mb-4 list-decimal list-outside ml-5 space-y-2 text-slate-300;
+  }
+
+  .markdown-content li {
+    @apply leading-7 pl-1;
+  }
+
+  .markdown-content blockquote {
+    @apply border-l-2 border-primary-500/50 pl-4 py-1 my-6 italic text-slate-400 bg-slate-800/20 rounded-r;
+  }
+
+  .markdown-content code {
+    @apply font-mono text-[0.9em];
+  }
+
+  .markdown-content pre {
+    @apply my-4 rounded-xl overflow-hidden border border-slate-800 shadow-inner;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

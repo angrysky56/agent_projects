@@ -1,7 +1,9 @@
 # Python
 __pycache__/
+pytest_cache/
 *.py[cod]
 *$py.class
+*.pyc
 *.so
 .Python
 build/
@@ -55,3 +57,11 @@ logs/
 .gemini/
 artifacts/
 compass_output/*.json
+
+# COMPASS Data
+compass.db
+chat_history/
+*.sqlite
+*.db
+mcp_servers_config.json
+

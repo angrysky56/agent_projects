@@ -20,14 +20,24 @@ interface AppState {
     // COMPASS state
     useCompass: boolean;
     autoConfig: boolean;
+    compassTrace: string[];
     toggleCompass: () => void;
     toggleAutoConfig: () => void;
+    addCompassStep: (step: string) => void;
+    clearCompassTrace: () => void;
 
     // MCP state
     mcpServers: MCPServer[];
     mcpTools: MCPTool[];
     setMCPServers: (servers: MCPServer[]) => void;
     setMCPTools: (tools: MCPTool[]) => void;
+
+    // Conversation state
+    conversations: any[];
+    currentConversationId: string | null;
+    setConversations: (conversations: any[]) => void;
+    setCurrentConversationId: (id: string | null) => void;
+    loadConversation: (id: string, messages: Message[]) => void;
 
     // UI state
     sidebarOpen: boolean;
@@ -55,14 +65,28 @@ export const useAppStore = create<AppState>((set) => ({
     // COMPASS state
     useCompass: true,
     autoConfig: true,
+    compassTrace: [],
     toggleCompass: () => set((state) => ({ useCompass: !state.useCompass })),
     toggleAutoConfig: () => set((state) => ({ autoConfig: !state.autoConfig })),
+    addCompassStep: (step) => set((state) => ({ compassTrace: [...state.compassTrace, step] })),
+    clearCompassTrace: () => set({ compassTrace: [] }),
 
     // MCP state
     mcpServers: [],
     mcpTools: [],
     setMCPServers: (servers) => set({ mcpServers: servers }),
     setMCPTools: (tools) => set({ mcpTools: tools }),
+
+    // Conversation state
+    conversations: [],
+    currentConversationId: null,
+    setConversations: (conversations) => set({ conversations }),
+    setCurrentConversationId: (id) => set({ currentConversationId: id }),
+    loadConversation: (id, messages) => set({
+        currentConversationId: id,
+        messages: messages,
+        compassTrace: [] // Clear trace when loading new conversation
+    }),
 
     // UI state
     sidebarOpen: true,
