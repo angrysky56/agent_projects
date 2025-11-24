@@ -24,6 +24,7 @@ export const ChatInterface: React.FC = () => {
         currentProvider,
         currentModel,
         useCompass,
+        allowAllTools,
         addCompassStep,
         clearCompassTrace
     } = useAppStore();
@@ -55,6 +56,7 @@ export const ChatInterface: React.FC = () => {
                 stream: true,
                 temperature: 0.7,
                 use_compass: useCompass,
+                allow_all_tools: allowAllTools,
                 conversation_id: conversationId || undefined,
             };
 

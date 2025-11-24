@@ -160,9 +160,9 @@ class IntegratedIntelligence:
 
     async def _llm_intelligence(self, task: str, reasoning_plan: Dict, context: Dict) -> Tuple[float, Optional[str]]:
         """
-        LLM-based intelligence component.
+        LLM-based intelligence component with Tool Execution capabilities.
 
-        Uses the connected LLM provider to generate a solution and confidence score.
+        Uses the connected LLM provider to generate a solution, potentially using tools.
 
         Args:
             task: Task description
@@ -176,8 +176,23 @@ class IntegratedIntelligence:
             return 0.5, None
 
         try:
-            # Construct prompt for decision making
-            system_prompt = "You are the Integrated Intelligence module of COMPASS. Your goal is to synthesize a decision based on the provided reasoning plan."
+            # 1. Fetch available tools
+            tools = []
+            if self.mcp_client:
+                try:
+                    from ..mcp_tool_adapter import get_available_tools_for_llm
+
+                    tools = await get_available_tools_for_llm(self.mcp_client)
+                except ImportError:
+                    self.logger.warning("Could not import mcp_tool_adapter")
+                except Exception as e:
+                    self.logger.warning(f"Failed to fetch tools: {e}")
+
+            # 2. Construct prompt
+            system_prompt = "You are the Integrated Intelligence module of COMPASS. Your goal is to synthesize a decision or EXECUTE A TOOL based on the provided reasoning plan."
+
+            if tools:
+                system_prompt += "\n\nYou have access to tools. If the plan requires external actions (reading files, searching, etc.), USE THE TOOLS."
 
             user_prompt = f"Task: {task}\n\nReasoning Plan Summary:\n"
             if "conceptualization" in reasoning_plan:
@@ -185,18 +200,72 @@ class IntegratedIntelligence:
             if "advancement" in reasoning_plan:
                 user_prompt += f"- Advancement Score: {reasoning_plan['advancement']:.2f}\n"
 
-            user_prompt += "\nBased on this, should we proceed with execution? If so, what is the recommended action? Return a JSON with 'confidence' (0.0-1.0) and 'action' (string)."
+            user_prompt += "\nBased on this, should we proceed with execution? If so, what is the recommended action? Return a JSON with 'confidence' (0.0-1.0) and 'action' (string). OR call a tool directly."
 
             from ..llm_providers import Message
 
             messages = [Message(role="system", content=system_prompt), Message(role="user", content=user_prompt)]
 
-            # Call LLM
+            # 3. Call LLM with tools
             response_content = ""
-            async for chunk in self.llm_provider.chat_completion(messages, stream=False, temperature=0.3, max_tokens=500):
-                response_content += chunk
+            tool_calls = []
 
-            # Parse response
+            # We need to handle both text chunks and tool call chunks
+            async for chunk in self.llm_provider.chat_completion(messages, stream=False, temperature=0.3, max_tokens=500, tools=tools if tools else None):
+                try:
+                    # Check if chunk is a tool call JSON
+                    if chunk.strip().startswith('{"tool_calls":'):
+                        import json
+
+                        data = json.loads(chunk)
+                        if "tool_calls" in data:
+                            tool_calls.extend(data["tool_calls"])
+                    else:
+                        response_content += chunk
+                except:
+                    response_content += chunk
+
+            # 4. Execute Tools if present
+            if tool_calls:
+                self.logger.info(f"Integrated Intelligence decided to execute {len(tool_calls)} tools")
+                results = []
+
+                from ..mcp_tool_adapter import format_tool_call_for_mcp
+
+                for tool_call in tool_calls:
+                    name, args = format_tool_call_for_mcp(tool_call)
+                    self.logger.info(f"Executing tool: {name} with args: {args}")
+
+                    try:
+                        # Execute via MCP client
+                        # Note: We assume mcp_client has a session or similar mechanism
+                        # Based on api_server.py usage: await mcp_client.session.call_tool(name, args)
+                        if hasattr(self.mcp_client, "session"):
+                            result = await self.mcp_client.session.call_tool(name, args)
+                        else:
+                            # Fallback if mcp_client IS the session (depending on implementation)
+                            result = await self.mcp_client.call_tool(name, args)
+
+                        # Format result
+                        content_str = ""
+                        if isinstance(result, dict) and "content" in result:
+                            content_list = result.get("content", [])
+                            text_parts = [item.get("text", "") for item in content_list if item.get("type") == "text"]
+                            content_str = "\\n".join(text_parts)
+                        else:
+                            content_str = str(result)
+
+                        results.append(f"Tool '{name}' output: {content_str}")
+
+                    except Exception as e:
+                        error_msg = f"Error executing tool {name}: {str(e)}"
+                        self.logger.error(error_msg)
+                        results.append(error_msg)
+
+                # Return tool results as the action
+                return 1.0, "\\n\\n".join(results)
+
+            # 5. Parse standard JSON response
             import json
 
             try:
@@ -210,11 +279,11 @@ class IntegratedIntelligence:
                 return data.get("confidence", 0.8), data.get("action", "LLM_EXECUTION_REQUIRED")
             except json.JSONDecodeError:
                 # Fallback if not JSON
-                return 0.8, "LLM_EXECUTION_REQUIRED"
+                return 0.8, response_content if response_content else "LLM_EXECUTION_REQUIRED"
 
         except Exception as e:
             self.logger.error(f"Error in LLM intelligence: {e}")
-            return 0.5, None
+            return 0.5, f"Error: {str(e)}"
 
     def _generate_action(self, score: float, reasoning_plan: Dict, modules: List[int]) -> str:
         """Generate action description based on intelligence score."""

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Type definitions
 PermissionLevel = Literal["SAFE", "MODERATE", "DANGEROUS"]
-PermissionAction = Literal["ALLOW_ALWAYS", "DENY_ALWAYS", "ASK"]
+PermissionAction = Literal["ALLOW_ALWAYS", "ASK"]  # Removed DENY_ALWAYS - deny is one-time only
 
 
 @dataclass

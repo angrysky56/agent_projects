@@ -8,7 +8,7 @@ import { useAppStore } from './store';
 import './index.css';
 
 function App() {
-    const { useCompass, toggleCompass, currentView } = useAppStore();
+    const { useCompass, toggleCompass, allowAllTools, toggleAllowAllTools, currentView } = useAppStore();
 
     return (
         <div className="flex h-screen">
@@ -68,6 +68,28 @@ function App() {
                                 {useCompass
                                     ? 'Auto-configuring cognitive frameworks based on task complexity'
                                     : 'Using direct LLM responses'}
+                            </p>
+                        </div>
+
+                        {/* YOLO Mode Toggle */}
+                        <div className="glass-card p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-semibold text-slate-300">YOLO Mode</h3>
+                                <button
+                                    onClick={toggleAllowAllTools}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${allowAllTools ? 'bg-green-600' : 'bg-slate-600'
+                                        }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowAllTools ? 'translate-x-6' : 'translate-x-1'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+                            <p className="text-xs text-slate-400">
+                                {allowAllTools
+                                    ? '🚀 Auto-allowing all tool executions'
+                                    : '🔒 Tools require permission'}
                             </p>
                         </div>
 

@@ -175,15 +175,19 @@ async def chat_completion(request: ChatRequest):
         if request.model:
             provider.config.model = request.model
 
-        # Fetch available MCP tools for function calling (unless using COMPASS)
+        # Fetch available MCP tools for function calling (always fetch)
         available_tools = []
-        if not request.use_compass:
-            from .mcp_tool_adapter import get_available_tools_for_llm
+        from .mcp_tool_adapter import get_available_tools_for_llm
 
-            mcp_client = await get_mcp_client()
+        mcp_client = await get_mcp_client()
+        if mcp_client:
             available_tools = await get_available_tools_for_llm(mcp_client)
             if available_tools:
-                logger.info(f"Loaded {len(available_tools)} MCP tools for LLM function calling")
+                logger.info(f"🔧 Loaded {len(available_tools)} MCP tools")
+            else:
+                logger.warning("⚠️ No MCP tools available")
+        else:
+            logger.warning("⚠️ MCP client not initialized")
 
         if request.use_compass and len(messages) > 0:
             # Use COMPASS for enhanced reasoning

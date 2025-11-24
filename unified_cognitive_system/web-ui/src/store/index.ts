@@ -26,6 +26,10 @@ interface AppState {
     addCompassStep: (step: string) => void;
     clearCompassTrace: () => void;
 
+    // Tool permissions state
+    allowAllTools: boolean;  // YOLO mode
+    toggleAllowAllTools: () => void;
+
     // MCP state
     mcpServers: MCPServer[];
     mcpTools: MCPTool[];
@@ -70,6 +74,10 @@ export const useAppStore = create<AppState>((set) => ({
     toggleAutoConfig: () => set((state) => ({ autoConfig: !state.autoConfig })),
     addCompassStep: (step) => set((state) => ({ compassTrace: [...state.compassTrace, step] })),
     clearCompassTrace: () => set({ compassTrace: [] }),
+
+    // Tool permissions state
+    allowAllTools: true,  // Default to YOLO mode (user's preference)
+    toggleAllowAllTools: () => set((state) => ({ allowAllTools: !state.allowAllTools })),
 
     // MCP state
     mcpServers: [],
