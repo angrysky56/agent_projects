@@ -14,7 +14,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from .llm_providers import create_provider, ProviderType, Message
-from .mcp_client import initialize_mcp, shutdown_mcp
+from .mcp_client import initialize_mcp, shutdown_mcp, get_mcp_client
 from .compass_api import get_compass_api, ProcessingUpdate, COMPASSResult
 
 from .conversation_manager import ConversationManager
@@ -198,6 +198,7 @@ async def chat_completion(request: ChatRequest):
                             last_message,
                             conversation_context,  # Pass full context
                             llm_provider=provider,
+                            mcp_client=await get_mcp_client(),
                         ):
                             if isinstance(update, ProcessingUpdate):
                                 # Collect thinking steps
@@ -217,18 +218,74 @@ async def chat_completion(request: ChatRequest):
 
                         # Generate natural language response using LLM
                         if compass_result:
-                            # Create context-aware prompt with conversation history
-                            system_prompt = "You are COMPASS, an advanced cognitive system. You have just analyzed the user's request using your internal frameworks. Use the following reasoning trace and solution to formulate a helpful, natural language response. Explain your reasoning clearly."
+                            # Create context-aware prompt with full COMPASS reasoning
+                            system_prompt = """You are COMPASS, an advanced cognitive system that uses multiple AI frameworks for deep reasoning.
 
-                            # Format context safely
-                            solution_str = json.dumps(compass_result.solution, default=str)
+You have just analyzed the user's request through your internal cognitive pipeline including:
+- SHAPE: Input processing and concept extraction
+- SLAP: Semantic logic and advancement planning
+- SMART: Objective setting and feasibility analysis
+- Integrated Intelligence: Multi-modal reasoning and decision making
 
-                            compass_context = f"Original Task: {last_message}\n\nInternal Solution/Decision: {solution_str}\n"
+Your task is to provide a clear, helpful response to the user based on your analysis. Explain your reasoning naturally without mentioning the internal framework names."""
+
+                            # Build comprehensive reasoning context
+                            reasoning_parts = []
+
+                            # Add trajectory information if available
+                            if hasattr(compass_result, "trajectory") and compass_result.trajectory:
+                                traj_dict = compass_result.trajectory if isinstance(compass_result.trajectory, dict) else compass_result.trajectory
+
+                                # Extract SLAP planning information
+                                if "steps" in traj_dict and traj_dict["steps"]:
+                                    for step_pair in traj_dict["steps"]:
+                                        if isinstance(step_pair, list) and len(step_pair) > 0:
+                                            slap_plan = step_pair[0] if isinstance(step_pair[0], dict) else {}
+
+                                            # Add advancement score and semantic reasoning
+                                            if "advancement" in slap_plan:
+                                                reasoning_parts.append(f"Reasoning Quality Score: {slap_plan['advancement']:.2f}")
+
+                                            # Add conceptualization
+                                            if "conceptualization" in slap_plan:
+                                                concept = slap_plan["conceptualization"]
+                                                if isinstance(concept, dict) and "primary_concept" in concept:
+                                                    reasoning_parts.append(f"Primary Concept: {concept['primary_concept']}")
+
+                                            # Add scrutiny findings
+                                            if "scrutiny" in slap_plan and isinstance(slap_plan["scrutiny"], dict):
+                                                scrutiny = slap_plan["scrutiny"]
+                                                if "gaps" in scrutiny and scrutiny["gaps"]:
+                                                    reasoning_parts.append(f"Identified Gaps: {', '.join(scrutiny['gaps'])}")
+
+                                        # Extract decision reasoning from second element in step
+                                        if isinstance(step_pair, list) and len(step_pair) > 1:
+                                            decision = step_pair[1] if isinstance(step_pair[1], dict) else {}
+                                            if "reasoning" in decision:
+                                                reasoning_parts.append(f"Decision Basis: {decision['reasoning']}")
+                                            if "intelligence_breakdown" in decision:
+                                                breakdown = decision["intelligence_breakdown"]
+                                                if isinstance(breakdown, dict):
+                                                    top_scores = sorted(breakdown.items(), key=lambda x: x[1], reverse=True)[:3]
+                                                    scores_str = ", ".join([f"{k}: {v:.2f}" for k, v in top_scores])
+                                                    reasoning_parts.append(f"Top Intelligence Factors: {scores_str}")
+
+                            # Build the context string
+                            compass_context = f"User's Question: {last_message}\n\n"
+
+                            if reasoning_parts:
+                                compass_context += "My Internal Analysis:\n" + "\n".join([f"- {part}" for part in reasoning_parts]) + "\n\n"
+
+                            # Add solution/decision
+                            solution_str = str(compass_result.solution) if compass_result.solution else "Analysis complete"
+                            compass_context += f"Recommended Action: {solution_str}\n\n"
 
                             # Add conversation history to LLM context
                             if len(messages) > 1:
                                 history_str = "\n".join([f"{m.role}: {m.content}" for m in messages[:-1]])
-                                compass_context = f"Conversation History:\n{history_str}\n\n{compass_context}"
+                                compass_context = f"Previous Conversation:\n{history_str}\n\n{compass_context}"
+
+                            compass_context += "Please provide a helpful, natural response to the user based on this analysis. Focus on answering their question clearly and explaining your reasoning."
 
                             # Create messages for LLM
                             llm_messages = [Message(role="system", content=system_prompt), Message(role="user", content=compass_context)]
@@ -248,20 +305,101 @@ async def chat_completion(request: ChatRequest):
                 return StreamingResponse(compass_stream(), media_type="text/event-stream")
             else:
                 # Non-streaming COMPASS
-                result = None
-                async for update in compass_api.process_task(
-                    last_message,
-                    conversation_context,  # Pass full context
-                    llm_provider=provider,
-                ):
-                    if isinstance(update, COMPASSResult):
-                        result = update
+                async with provider:
+                    result = None
+                    async for update in compass_api.process_task(
+                        last_message,
+                        conversation_context,  # Pass full context
+                        llm_provider=provider,
+                        mcp_client=await get_mcp_client(),
+                    ):
+                        if isinstance(update, COMPASSResult):
+                            result = update
 
-                # Save result
-                if result:
-                    conversation_manager.add_message(conversation_id, {"role": "assistant", "content": str(result.solution), "reasoning": result.__dict__})
+                    # Generate natural language response using LLM (same logic as streaming)
+                    if result:
+                        system_prompt = """You are COMPASS, an advanced cognitive system that uses multiple AI frameworks for deep reasoning.
 
-                return {"type": "compass_result", "data": result.__dict__ if result else {}, "conversation_id": conversation_id}
+You have just analyzed the user's request through your internal cognitive pipeline including:
+- SHAPE: Input processing and concept extraction
+- SLAP: Semantic logic and advancement planning
+- SMART: Objective setting and feasibility analysis
+- Integrated Intelligence: Multi-modal reasoning and decision making
+
+Your task is to provide a clear, helpful response to the user based on your analysis. Explain your reasoning naturally without mentioning the internal framework names."""
+
+                        # Build comprehensive reasoning context
+                        reasoning_parts = []
+
+                        # Add trajectory information if available
+                        if hasattr(result, "trajectory") and result.trajectory:
+                            traj_dict = result.trajectory if isinstance(result.trajectory, dict) else result.trajectory
+
+                            # Extract SLAP planning information
+                            if "steps" in traj_dict and traj_dict["steps"]:
+                                for step_pair in traj_dict["steps"]:
+                                    if isinstance(step_pair, list) and len(step_pair) > 0:
+                                        slap_plan = step_pair[0] if isinstance(step_pair[0], dict) else {}
+
+                                        # Add advancement score and semantic reasoning
+                                        if "advancement" in slap_plan:
+                                            reasoning_parts.append(f"Reasoning Quality Score: {slap_plan['advancement']:.2f}")
+
+                                        # Add conceptualization
+                                        if "conceptualization" in slap_plan:
+                                            concept = slap_plan["conceptualization"]
+                                            if isinstance(concept, dict) and "primary_concept" in concept:
+                                                reasoning_parts.append(f"Primary Concept: {concept['primary_concept']}")
+
+                                        # Add scrutiny findings
+                                        if "scrutiny" in slap_plan and isinstance(slap_plan["scrutiny"], dict):
+                                            scrutiny = slap_plan["scrutiny"]
+                                            if "gaps" in scrutiny and scrutiny["gaps"]:
+                                                reasoning_parts.append(f"Identified Gaps: {', '.join(scrutiny['gaps'])}")
+
+                                    # Extract decision reasoning from second element in step
+                                    if isinstance(step_pair, list) and len(step_pair) > 1:
+                                        decision = step_pair[1] if isinstance(step_pair[1], dict) else {}
+                                        if "reasoning" in decision:
+                                            reasoning_parts.append(f"Decision Basis: {decision['reasoning']}")
+                                        if "intelligence_breakdown" in decision:
+                                            breakdown = decision["intelligence_breakdown"]
+                                            if isinstance(breakdown, dict):
+                                                top_scores = sorted(breakdown.items(), key=lambda x: x[1], reverse=True)[:3]
+                                                scores_str = ", ".join([f"{k}: {v:.2f}" for k, v in top_scores])
+                                                reasoning_parts.append(f"Top Intelligence Factors: {scores_str}")
+
+                        # Build the context string
+                        compass_context = f"User's Question: {last_message}\n\n"
+
+                        if reasoning_parts:
+                            compass_context += "My Internal Analysis:\n" + "\n".join([f"- {part}" for part in reasoning_parts]) + "\n\n"
+
+                        # Add solution/decision
+                        solution_str = str(result.solution) if result.solution else "Analysis complete"
+                        compass_context += f"Recommended Action: {solution_str}\n\n"
+
+                        # Add conversation history to LLM context
+                        if len(messages) > 1:
+                            history_str = "\n".join([f"{m.role}: {m.content}" for m in messages[:-1]])
+                            compass_context = f"Previous Conversation:\n{history_str}\n\n{compass_context}"
+
+                        compass_context += "Please provide a helpful, natural response to the user based on this analysis. Focus on answering their question clearly and explaining your reasoning."
+
+                        # Create messages for LLM
+                        llm_messages = [Message(role="system", content=system_prompt), Message(role="user", content=compass_context)]
+
+                        # Get LLM response
+                        assistant_response = ""
+                        async for chunk in provider.chat_completion(llm_messages, stream=False, temperature=0.7):
+                            assistant_response += chunk
+
+                        # Save assistant response
+                        conversation_manager.add_message(conversation_id, {"role": "assistant", "content": assistant_response, "reasoning": result.__dict__})
+
+                        return {"type": "compass_result", "content": assistant_response, "data": result.__dict__, "conversation_id": conversation_id}
+
+                    return {"type": "compass_result", "data": {}, "conversation_id": conversation_id}
 
         else:
             # Direct LLM completion without COMPASS
@@ -312,7 +450,7 @@ async def websocket_chat(websocket: WebSocket):
                 if use_compass and len(messages) > 0:
                     # COMPASS processing
                     compass_api = get_compass_api()
-                    async for update in compass_api.process_task(messages[-1].content, data.get("context"), llm_provider=provider):
+                    async for update in compass_api.process_task(messages[-1].content, data.get("context"), llm_provider=provider, mcp_client=await get_mcp_client()):
                         if isinstance(update, ProcessingUpdate):
                             await websocket.send_json({"type": "update", "data": update.__dict__})
                         elif isinstance(update, COMPASSResult):

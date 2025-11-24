@@ -23,12 +23,8 @@ fuser -k 8000/tcp > /dev/null 2>&1
 
 # Start Backend
 echo "Starting Backend API Server..."
-cd backend
-# Check if virtual environment exists and activate it if needed
-# source venv/bin/activate
-python api_server.py &
+python3 -m backend.api_server &
 BACKEND_PID=$!
-cd ..
 
 # Wait a moment for backend to start
 sleep 2

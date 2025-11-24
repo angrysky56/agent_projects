@@ -24,7 +24,7 @@ class COMPASS:
     Integrates all six frameworks into a unified decision-making and reasoning system.
     """
 
-    def __init__(self, config: Optional[COMPASSConfig] = None, logger: Optional[COMPASSLogger] = None, llm_provider: Optional[Any] = None):
+    def __init__(self, config: Optional[COMPASSConfig] = None, logger: Optional[COMPASSLogger] = None, llm_provider: Optional[Any] = None, mcp_client: Optional[Any] = None):
         """
         Initialize COMPASS framework.
 
@@ -32,10 +32,12 @@ class COMPASS:
             config: Configuration object (uses default if None)
             logger: Optional logger instance
             llm_provider: Optional LLM provider instance
+            mcp_client: Optional MCP client instance
         """
         self.config = config or get_config()
         self.logger = logger or COMPASSLogger("COMPASS", level=self.config.log_level)
         self.llm_provider = llm_provider
+        self.mcp_client = mcp_client
 
         # Lazy initialization of components
         self._shape_processor = None
@@ -75,7 +77,7 @@ class COMPASS:
         if self._slap_pipeline is None:
             from .slap_pipeline import SLAPPipeline
 
-            self._slap_pipeline = SLAPPipeline(self.config.slap, self.logger)
+            self._slap_pipeline = SLAPPipeline(self.config.slap, self.logger, self.llm_provider)
         return self._slap_pipeline
 
     @property
@@ -102,7 +104,7 @@ class COMPASS:
         if self._integrated_intelligence is None:
             from .integrated_intelligence import IntegratedIntelligence
 
-            self._integrated_intelligence = IntegratedIntelligence(self.config.intelligence, self.logger, self.llm_provider)
+            self._integrated_intelligence = IntegratedIntelligence(self.config.intelligence, self.logger, self.llm_provider, self.mcp_client)
         return self._integrated_intelligence
 
     @property
@@ -141,7 +143,7 @@ class COMPASS:
             self._procedural_toolkit = ProceduralToolkit(self.config.cgra.toolkit, self.logger)
         return self._procedural_toolkit
 
-    def process_task(self, task_description: str, context: Optional[Dict[str, Any]] = None, max_iterations: Optional[int] = None) -> Dict[str, Any]:
+    async def process_task(self, task_description: str, context: Optional[Dict[str, Any]] = None, max_iterations: Optional[int] = None) -> Dict[str, Any]:
         """
         Process a task through the integrated cognitive framework.
 
@@ -210,7 +212,7 @@ class COMPASS:
             # C. Reasoning Plan Generation
             # SLAP generates plan based on selected representation
             self.logger.info(f"Creating SLAP reasoning plan (Type: {representation.current_type})")
-            reasoning_plan = self.slap_pipeline.create_reasoning_plan(task_text, objectives, representation_type=representation.current_type)
+            reasoning_plan = await self.slap_pipeline.create_reasoning_plan(task_text, objectives, representation_type=representation.current_type)
             self.logger.info(f"SLAP plan created with advancement score: {reasoning_plan.get('advancement', 0.0):.3f}")
 
             # D. Procedural Operations (Optional)
@@ -226,7 +228,7 @@ class COMPASS:
 
             # E. Execution
             # Integrated Intelligence executes the plan
-            decision = self._execute_reasoning_step(
+            decision = await self._execute_reasoning_step(
                 task_text,
                 reasoning_plan,
                 control_decision["strategy"],  # strategy contains the module list
@@ -275,9 +277,9 @@ class COMPASS:
             "trajectory": trajectory.to_dict(),
         }
 
-    def _execute_reasoning_step(self, task: str, plan: Dict, modules: List[int], resources: Dict, context: Optional[Dict]) -> Dict:
+    async def _execute_reasoning_step(self, task: str, plan: Dict, modules: List[int], resources: Dict, context: Optional[Dict]) -> Dict:
         """Execute a single reasoning step using Integrated Intelligence."""
-        return self.integrated_intelligence.make_decision(task, plan, modules, resources, context or {})
+        return await self.integrated_intelligence.make_decision(task, plan, modules, resources, context or {})
 
     def get_status(self) -> Dict[str, Any]:
         """Get current status of the framework."""
@@ -293,13 +295,14 @@ class COMPASS:
         }
 
 
-def create_compass(config: Optional[COMPASSConfig] = None, llm_provider: Optional[Any] = None) -> COMPASS:
+def create_compass(config: Optional[COMPASSConfig] = None, llm_provider: Optional[Any] = None, mcp_client: Optional[Any] = None) -> COMPASS:
     """
     Factory function to create a COMPASS instance.
 
     Args:
         config: Optional configuration override
         llm_provider: Optional LLM provider instance
+        mcp_client: Optional MCP client instance
 
     Returns:
         Configured COMPASS instance
@@ -307,7 +310,7 @@ def create_compass(config: Optional[COMPASSConfig] = None, llm_provider: Optiona
     if config is None:
         config = COMPASSConfig()
 
-    return COMPASS(config, llm_provider=llm_provider)
+    return COMPASS(config, llm_provider=llm_provider, mcp_client=mcp_client)
 
 
 def quick_solve(task: str, **config_overrides) -> Dict[str, Any]:

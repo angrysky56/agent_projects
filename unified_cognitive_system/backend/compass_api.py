@@ -56,7 +56,7 @@ class COMPASSAPIWrapper:
         self.current_config: Optional[COMPASSConfig] = None
         self.current_activation: Optional[FrameworkActivation] = None
 
-    async def process_task(self, task_description: str, context: Optional[Dict[str, Any]] = None, user_config_overrides: Optional[Dict[str, Any]] = None, max_iterations: int = 10, llm_provider: Optional[Any] = None) -> AsyncIterator[ProcessingUpdate | COMPASSResult]:
+    async def process_task(self, task_description: str, context: Optional[Dict[str, Any]] = None, user_config_overrides: Optional[Dict[str, Any]] = None, max_iterations: int = 10, llm_provider: Optional[Any] = None, mcp_client: Optional[Any] = None) -> AsyncIterator[ProcessingUpdate | COMPASSResult]:
         """
         Process a task through the COMPASS framework with streaming updates.
 
@@ -66,6 +66,7 @@ class COMPASSAPIWrapper:
             user_config_overrides: Manual configuration overrides
             max_iterations: Maximum reasoning iterations
             llm_provider: Optional LLM provider instance
+            mcp_client: Optional MCP client instance
 
         Yields:
             ProcessingUpdate objects during processing
@@ -84,7 +85,7 @@ class COMPASSAPIWrapper:
             yield ProcessingUpdate(stage="configuration", message=f"Configuration optimized (Complexity: {activation.get_active_count()}/6 frameworks)", progress=0.1, data={"activated_frameworks": asdict(activation), "config_summary": self._get_config_summary(config)})
 
             # Initialize COMPASS
-            self.compass = create_compass(config, llm_provider)
+            self.compass = create_compass(config, llm_provider, mcp_client)
 
             yield ProcessingUpdate(stage="compass_init", message="COMPASS framework initialized", progress=0.2)
 
@@ -97,10 +98,7 @@ class COMPASSAPIWrapper:
             # Emit thinking step: Starting COMPASS
             yield ProcessingUpdate(stage="thinking", message="Starting COMPASS cognitive processing", progress=0.35, data={"thinking_step": "initialization", "content": "Beginning multi-framework analysis"})
 
-            # Run COMPASS processing (this is synchronous in the current implementation)
-            # We'll wrap it in an executor to make it async
-            loop = asyncio.get_event_loop()
-
+            # Run COMPASS processing (now async)
             # Capture thinking by monkey-patching logger temporarily
             thinking_steps = []
             original_info = self.compass.logger.info
@@ -112,7 +110,7 @@ class COMPASSAPIWrapper:
             self.compass.logger.info = capture_thinking
 
             try:
-                result = await loop.run_in_executor(None, self.compass.process_task, task_description, context or {}, max_iterations)
+                result = await self.compass.process_task(task_description, context or {}, max_iterations)
             finally:
                 self.compass.logger.info = original_info
 
