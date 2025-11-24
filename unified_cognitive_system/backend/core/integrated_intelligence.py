@@ -189,12 +189,48 @@ class IntegratedIntelligence:
                     self.logger.warning(f"Failed to fetch tools: {e}")
 
             # 2. Construct prompt
-            system_prompt = "You are the Integrated Intelligence module of COMPASS. Your goal is to synthesize a decision or EXECUTE A TOOL based on the provided reasoning plan."
+            from .system_prompts import COMPASS_CORE_PROMPT
+
+            system_prompt = COMPASS_CORE_PROMPT
 
             if tools:
-                system_prompt += "\n\nYou have access to tools. If the plan requires external actions (reading files, searching, etc.), USE THE TOOLS."
+                system_prompt += "\n\n**Tool Usage**:\nYou have access to tools. If the plan requires external actions (reading files, searching, etc.), USE THE TOOLS. Do not ask for permission if the tool is available."
 
-            user_prompt = f"Task: {task}\n\nReasoning Plan Summary:\n"
+            user_prompt = f"Task: {task}\n\n"
+
+            # Add Cognitive Context (SHAPE & SMART)
+            if context.get("shape_analysis"):
+                shape = context["shape_analysis"]
+                user_prompt += f"**Input Analysis (SHAPE)**:\n- Intent: {shape.get('intent')}\n- Key Concepts: {shape.get('concepts')}\n\n"
+
+            if context.get("smart_objectives"):
+                objs = context["smart_objectives"]
+                user_prompt += "**Objectives (SMART)**:\n" + "\n".join([f"- {o.get('description')} (Target: {o.get('target_value')})" for o in objs]) + "\n\n"
+
+            # Add Trajectory (History of previous actions)
+            if context.get("trajectory") and context["trajectory"].get("steps"):
+                steps = context["trajectory"]["steps"]
+                if steps:
+                    user_prompt += "**Previous Operations (Trajectory)**:\n"
+                    for idx, step in enumerate(steps):
+                        # step is typically [plan, decision]
+                        if isinstance(step, list) and len(step) > 1:
+                            decision = step[1]
+                            action = decision.get("action", "Unknown action")
+                            user_prompt += f"Step {idx + 1}: {action}\n"
+                    user_prompt += "\n"
+
+            # Add Constraint Violations (Self-Scrutiny)
+            if context.get("constraint_violations"):
+                violations = context["constraint_violations"]
+                if violations.get("total_violations", 0) > 0:
+                    user_prompt += "**System Trace / Scrutiny (Critiques)**:\n"
+                    user_prompt += f"Total Violations: {violations['total_violations']}\n"
+                    if violations.get("by_type"):
+                        user_prompt += "Violations by Type: " + str(violations["by_type"]) + "\n"
+                    user_prompt += "CRITICAL: Address these violations in your next action.\n\n"
+
+            user_prompt += "Reasoning Plan Summary (Current Step):\n"
             if "conceptualization" in reasoning_plan:
                 user_prompt += f"- Concept: {reasoning_plan['conceptualization'].get('primary_concept')}\n"
             if "advancement" in reasoning_plan:

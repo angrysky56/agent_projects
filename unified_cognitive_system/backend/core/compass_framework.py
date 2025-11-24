@@ -228,12 +228,29 @@ class COMPASS:
 
             # E. Execution
             # Integrated Intelligence executes the plan
+
+            # Enrich context with full cognitive state
+            execution_context = context.copy() if context else {}
+
+            # Get constraint violations
+            violation_report = self.constraint_governor.get_violation_report()
+
+            execution_context.update(
+                {
+                    "trajectory": trajectory.to_dict(),  # Full history of actions and results
+                    "shape_analysis": shape_result,  # How input was perceived
+                    "smart_objectives": [obj.to_dict() for obj in objectives],  # What we are trying to achieve
+                    "constraint_violations": violation_report,  # Self-critique/scrutiny
+                    "iteration": i,
+                }
+            )
+
             decision = await self._execute_reasoning_step(
                 task_text,
                 reasoning_plan,
                 control_decision["strategy"],  # strategy contains the module list
                 control_decision["resources"],
-                context,
+                execution_context,  # Updated context with history
             )
             solution = decision.get("action", "")
             score = decision.get("confidence", 0.0)
