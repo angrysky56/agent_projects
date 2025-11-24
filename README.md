@@ -6,7 +6,8 @@ This repository is a collection of ideas, concepts, and implementations explorin
 
 ## 🌟 Featured: COMPASS Framework
 
-![COMPASS](Screenshot_2025-11-22_02-29-12.png)
+![COMPASS]<img width="1920" height="1080" alt="Screenshot_2025-11-23_22-32-26" src="https://github.com/user-attachments/assets/b7279e00-d4a8-4e9e-8eb9-ad67dbac6ef5" />
+
 
 The **[COMPASS](./unified_cognitive_system/)** (Cognitive Orchestration & Metacognitive Planning for Adaptive Semantic Systems) framework is our flagship implementation - a production-ready AI reasoning system that integrates six sophisticated cognitive frameworks into a unified architecture.
 
