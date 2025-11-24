@@ -496,13 +496,29 @@ async def compass_trace():
 @app.get("/api/mcp/servers")
 async def list_mcp_servers():
     """List all connected MCP servers."""
-    return {"connected": [], "all_servers": []}
+    # In this simplified single-client version, we just check if the global client is connected
+    client = await get_mcp_client()
+    connected = ["default"] if client and client.session else []
+    return {"connected": connected, "all_servers": ["default"]}
 
 
 @app.get("/api/mcp/tools")
 async def list_mcp_tools(server_name: Optional[str] = None):
     """List MCP tools (all or from specific server)."""
-    return {"tools": []}
+    try:
+        client = await get_mcp_client()
+        if not client:
+            return {"tools": []}
+
+        tools = await client.list_tools()
+        # Add server_name to each tool for the frontend
+        for tool in tools:
+            tool["server_name"] = "default"
+
+        return {"tools": tools}
+    except Exception as e:
+        logger.error(f"Error listing tools: {e}")
+        return {"tools": []}
 
 
 # ============================================================================

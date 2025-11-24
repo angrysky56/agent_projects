@@ -73,6 +73,11 @@ export interface MCPTool {
     name: string;
     description: string;
     server_name: string;
+    inputSchema?: {
+        type: string;
+        properties: Record<string, any>;
+        required?: string[];
+    };
 }
 
 export interface MCPServer {

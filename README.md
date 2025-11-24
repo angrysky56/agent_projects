@@ -10,6 +10,13 @@ This repository is a collection of ideas, concepts, and implementations explorin
 
 The **[COMPASS](./unified_cognitive_system/)** (Cognitive Orchestration & Metacognitive Planning for Adaptive Semantic Systems) framework is our flagship implementation - a production-ready AI reasoning system that integrates six sophisticated cognitive frameworks into a unified architecture.
 
+To run COMPASS, navigate to the `unified_cognitive_system` directory, after running setup.sh to install dependencies, run the following command: ./start.sh or ./start.bat for Linux and Windows respectively.
+
+```bash
+cd agent_projects/unified_cognitive_system
+./start.sh
+```
+
 ### What Makes COMPASS Special?
 
 COMPASS doesn't just implement one reasoning approach - it orchestrates **six different cognitive systems** to work together:

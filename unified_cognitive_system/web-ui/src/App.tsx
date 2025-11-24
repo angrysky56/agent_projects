@@ -2,6 +2,7 @@
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ProviderSelector } from './components/ProviderSelector';
+import { MCPTools } from './components/MCPTools';
 import { useAppStore } from './store';
 import './index.css';
 
@@ -17,17 +18,7 @@ function App() {
                 <div className="flex-1 flex flex-col h-full overflow-hidden">
                     {currentView === 'chat' && <ChatInterface />}
 
-                    {currentView === 'mcp' && (
-                        <div className="flex-1 p-8 overflow-y-auto">
-                            <h2 className="text-2xl font-bold text-white mb-6">MCP Tools</h2>
-                            <div className="glass-card p-6 text-center">
-                                <p className="text-slate-300 mb-4">MCP Server Management coming soon.</p>
-                                <p className="text-sm text-slate-400">
-                                    Configure your MCP servers in the backend configuration or use the API endpoints.
-                                </p>
-                            </div>
-                        </div>
-                    )}
+                    {currentView === 'mcp' && <MCPTools />}
 
                     {currentView === 'settings' && (
                         <div className="flex-1 p-8 overflow-y-auto">
@@ -80,7 +71,14 @@ function App() {
                         {/* COMPASS Trace / Info */}
                         <div className="glass-card p-4 flex-1 overflow-hidden flex flex-col min-h-0">
                             <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center justify-between">
-                                <span>System Trace</span>
+                                <div className="flex flex-col">
+                                    <span>System Trace</span>
+                                    {useAppStore.getState().currentModel && (
+                                        <span className="text-[10px] text-slate-500 font-normal">
+                                            Model: {useAppStore.getState().currentModel}
+                                        </span>
+                                    )}
+                                </div>
                                 {useAppStore.getState().compassTrace.length > 0 && (
                                     <span className="text-xs text-primary-400 animate-pulse">● Live</span>
                                 )}

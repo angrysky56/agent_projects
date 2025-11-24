@@ -105,11 +105,11 @@ export const ProviderSelector: React.FC = () => {
                             <select
                                 value={currentModel || ''}
                                 onChange={(e) => setCurrentModel(e.target.value)}
-                                className="input-field text-sm"
+                                className="input-field text-sm bg-slate-800 text-slate-200 border-slate-700"
                             >
-                                <option value="">Default</option>
+                                <option value="" className="bg-slate-800 text-slate-200">Default</option>
                                 {availableModels.map((model) => (
-                                    <option key={model} value={model}>
+                                    <option key={model} value={model} className="bg-slate-800 text-slate-200">
                                         {model}
                                     </option>
                                 ))}
