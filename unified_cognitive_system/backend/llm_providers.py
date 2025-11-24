@@ -41,7 +41,7 @@ class ProviderConfig:
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     model: Optional[str] = None
-    timeout: int = 120
+    timeout: int = 900
 
 
 class BaseLLMProvider(ABC):
@@ -92,7 +92,7 @@ class OllamaProvider(BaseLLMProvider):
                 provider_type=ProviderType.OLLAMA,
                 api_key=os.getenv("OLLAMA_API_KEY"),
                 base_url=None,  # Will auto-detect
-                model="llama3.2:latest",
+                model="kimi-k2-thinking:cloud",
             )
         super().__init__(config)
         self.use_cloud = False

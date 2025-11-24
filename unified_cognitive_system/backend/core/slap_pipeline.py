@@ -161,6 +161,7 @@ Perform the SLAP analysis and output valid JSON in this format:
                 plan["type"] = representation_type
 
                 self.logger.info(f"SLAP plan created via LLM with score: {plan['advancement']:.3f}")
+                self.logger.info(f"SLAP_DETAILED_PLAN: {json.dumps(plan, indent=2)}")
                 return plan
 
             except json.JSONDecodeError as e:

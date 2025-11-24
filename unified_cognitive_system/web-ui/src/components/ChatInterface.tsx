@@ -392,21 +392,100 @@ const ThinkingPanel: React.FC<{ steps: ThinkingStep[], isStreaming?: boolean }> 
             {isExpanded && (
                 <div className="px-4 py-3 border-t border-indigo-500/10 bg-slate-950/30 max-h-96 overflow-y-auto custom-scrollbar">
                     <div className="space-y-3">
-                        {steps.map((step, idx) => (
-                            <div
-                                key={idx}
-                                className="flex gap-3 text-sm animate-fadeIn group"
-                                style={{ animationDelay: `${idx * 30}ms` }}
-                            >
-                                <div className="flex-shrink-0 mt-1.5 opacity-50 group-hover:opacity-100 transition-opacity">
-                                    <div className="w-1 h-1 rounded-full bg-indigo-400"></div>
+                        {steps.map((step, idx) => {
+                            if (step.content.startsWith('SLAP_DETAILED_PLAN:')) {
+                                try {
+                                    const plan = JSON.parse(step.content.replace('SLAP_DETAILED_PLAN:', ''));
+                                    return <SLAPAnalysisView key={idx} plan={plan} />;
+                                } catch (e) {
+                                    return (
+                                        <div key={idx} className="text-red-400 text-xs">
+                                            Failed to parse SLAP plan
+                                        </div>
+                                    );
+                                }
+                            }
+                            return (
+                                <div
+                                    key={idx}
+                                    className="flex gap-3 text-sm animate-fadeIn group"
+                                    style={{ animationDelay: `${idx * 30}ms` }}
+                                >
+                                    <div className="flex-shrink-0 mt-1.5 opacity-50 group-hover:opacity-100 transition-opacity">
+                                        <div className="w-1 h-1 rounded-full bg-indigo-400"></div>
+                                    </div>
+                                    <div className="flex-1 text-slate-300/90 font-mono text-xs leading-relaxed break-words">
+                                        {step.content}
+                                    </div>
                                 </div>
-                                <div className="flex-1 text-slate-300/90 font-mono text-xs leading-relaxed break-words">
-                                    {step.content}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const SLAPAnalysisView: React.FC<{ plan: any }> = ({ plan }) => {
+    const [expanded, setExpanded] = useState(false);
+
+    return (
+        <div className="mt-2 mb-4 border border-indigo-500/30 rounded-lg bg-indigo-900/10 overflow-hidden">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full px-3 py-2 flex items-center justify-between bg-indigo-900/20 hover:bg-indigo-900/30 transition-colors"
+            >
+                <div className="flex items-center gap-2">
+                    <Sparkles className="w-3 h-3 text-indigo-300" />
+                    <span className="text-xs font-semibold text-indigo-200">SLAP Reasoning Analysis</span>
+                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
+                        Score: {plan.advancement_score?.toFixed(2)}
+                    </span>
+                </div>
+                {expanded ? <ChevronUp className="w-3 h-3 text-indigo-400" /> : <ChevronDown className="w-3 h-3 text-indigo-400" />}
+            </button>
+
+            {expanded && (
+                <div className="p-3 space-y-3 text-xs font-mono text-slate-300">
+                    {/* Conceptualization */}
+                    <div className="space-y-1">
+                        <div className="text-indigo-400 font-semibold">1. Conceptualization</div>
+                        <div className="pl-2 border-l border-indigo-500/20">
+                            <div>Primary: <span className="text-slate-200">{plan.conceptualization?.primary_concept}</span></div>
+                            <div>Domain: <span className="text-slate-400">{plan.conceptualization?.domain}</span></div>
+                        </div>
+                    </div>
+
+                    {/* Scrutiny */}
+                    <div className="space-y-1">
+                        <div className="text-indigo-400 font-semibold">2. Scrutiny (Score: {plan.scrutiny?.score})</div>
+                        <div className="pl-2 border-l border-indigo-500/20">
+                            {plan.scrutiny?.weaknesses?.length > 0 && (
+                                <div className="text-amber-400/80">Weaknesses: {plan.scrutiny.weaknesses.join(', ')}</div>
+                            )}
+                            {plan.scrutiny?.gaps?.length > 0 && (
+                                <div className="text-amber-400/80">Gaps: {plan.scrutiny.gaps.join(', ')}</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Model */}
+                    <div className="space-y-1">
+                        <div className="text-indigo-400 font-semibold">3. Model (Completeness: {plan.model?.completeness})</div>
+                        <div className="pl-2 border-l border-indigo-500/20">
+                            <div>Structure: {plan.model?.structure}</div>
+                            <div>Components: {plan.model?.components?.join(', ')}</div>
+                        </div>
+                    </div>
+
+                    {/* Full JSON Toggle */}
+                    <details className="pt-2">
+                        <summary className="cursor-pointer text-indigo-400/60 hover:text-indigo-400 transition-colors">View Full JSON</summary>
+                        <pre className="mt-2 p-2 bg-slate-950 rounded overflow-x-auto text-[10px] text-slate-400">
+                            {JSON.stringify(plan, null, 2)}
+                        </pre>
+                    </details>
                 </div>
             )}
         </div>
