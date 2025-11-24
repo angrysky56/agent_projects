@@ -21,16 +21,18 @@ class SHAPEProcessor:
     and continuous adaptation based on feedback.
     """
 
-    def __init__(self, config, logger: Optional[COMPASSLogger] = None):
+    def __init__(self, config, logger: Optional[COMPASSLogger] = None, llm_provider: Optional[any] = None):
         """
         Initialize SHAPE processor.
 
         Args:
             config: SHAPEConfig instance
             logger: Optional logger instance
+            llm_provider: Optional LLM provider
         """
         self.config = config
         self.logger = logger or COMPASSLogger("SHAPE")
+        self.llm_provider = llm_provider
 
         # Shorthand dictionary
         self.shorthand_dict = dict(self.config.shorthand_dict)
@@ -41,9 +43,10 @@ class SHAPEProcessor:
 
         self.logger.info("SHAPE processor initialized")
 
-    def process_user_input(self, user_input: str) -> Dict[str, any]:
+    async def process_user_input(self, user_input: str) -> Dict[str, any]:
         """
         Process user's prompt request and identify shorthand elements.
+        Uses LLM if available for deeper semantic analysis.
 
         Args:
             user_input: Raw user input
@@ -56,7 +59,7 @@ class SHAPEProcessor:
         # Tokenize input
         tokens = self._tokenize(user_input)
 
-        # Identify shorthand elements
+        # Identify shorthand elements (Heuristic)
         shorthand_elements = []
         for i, token in enumerate(tokens):
             if token.lower() in self.shorthand_dict:
@@ -64,6 +67,42 @@ class SHAPEProcessor:
                 self.shorthand_usage[token.lower()] += 1
 
         result = {"original": user_input, "tokens": tokens, "shorthand_elements": shorthand_elements, "has_shorthand": len(shorthand_elements) > 0}
+
+        # LLM Semantic Enrichment (The "Intelligent" Part)
+        if self.llm_provider:
+            try:
+                from ..llm_providers import Message
+
+                prompt = f"""Analyze the following user input for the SHAPE (Semantic Heuristic Analysis & Processing Engine) module.
+Input: "{user_input}"
+
+Identify:
+1. Core Intent (What do they want to do?)
+2. Key Entities (What objects/files/concepts are involved?)
+3. Constraints (What are the limitations?)
+4. Implicit Goals (What is the underlying objective?)
+
+Return JSON: {{ "intent": "string", "entities": ["list"], "constraints": ["list"], "goals": ["list"] }}"""
+
+                messages = [Message(role="system", content="You are the SHAPE analysis module."), Message(role="user", content=prompt)]
+
+                response_content = ""
+                async for chunk in self.llm_provider.chat_completion(messages, stream=False, temperature=0.2):
+                    response_content += chunk
+
+                import json
+
+                if "```json" in response_content:
+                    response_content = response_content.split("```json")[1].split("```")[0].strip()
+                elif "```" in response_content:
+                    response_content = response_content.split("```")[1].split("```")[0].strip()
+
+                analysis = json.loads(response_content)
+                result["llm_analysis"] = analysis
+                self.logger.info(f"SHAPE LLM Analysis: {analysis.get('intent')}")
+
+            except Exception as e:
+                self.logger.warning(f"SHAPE LLM analysis failed: {e}")
 
         self.logger.debug(f"Found {len(shorthand_elements)} shorthand elements")
         return result

@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from .llm_providers import create_provider, ProviderType, Message
 from .mcp_client import initialize_mcp, shutdown_mcp, get_mcp_client
 from .compass_api import get_compass_api, ProcessingUpdate, COMPASSResult
-from .tool_permissions import get_permission_manager, classify_tool_risk, ToolPermission
+from .tool_permissions import get_permission_manager, classify_tool_risk
 
 from .conversation_manager import ConversationManager
 
@@ -67,6 +67,7 @@ app.add_middleware(
 class ChatMessage(BaseModel):
     role: str  # "system", "user", "assistant", "tool"
     content: str
+    reasoning: Optional[Dict[str, Any]] = None  # For COMPASS reasoning trace
     tool_calls: Optional[List[Dict[str, Any]]] = None  # For assistant messages with tool requests
     tool_name: Optional[str] = None  # For tool response messages
 
@@ -147,8 +148,8 @@ async def chat_completion(request: ChatRequest):
     Supports streaming and non-streaming responses with conversation history.
     """
     try:
-        # Convert to Message objects
-        messages = [Message(role=msg.role, content=msg.content) for msg in request.messages]
+        # Convert request messages to internal Message objects
+        messages = [Message(role=msg.role, content=msg.content, reasoning=msg.reasoning, tool_calls=msg.tool_calls) for msg in request.messages]
 
         # Handle conversation persistence
         conversation_id = request.conversation_id
@@ -243,8 +244,9 @@ You have just analyzed the user's request through your internal cognitive pipeli
 - SLAP: Semantic logic and advancement planning
 - SMART: Objective setting and feasibility analysis
 - Integrated Intelligence: Multi-modal reasoning and decision making
+- Constraint Governor: System trace and validation
 
-Your task is to provide a clear, helpful response to the user based on your analysis. Explain your reasoning naturally without mentioning the internal framework names."""
+Your task is to provide a clear, helpful response to the user. You should be transparent about your reasoning process and refer to your internal system traces (critiques, objectives) if they are relevant to the answer."""
 
                             # Build comprehensive reasoning context
                             reasoning_parts = []
@@ -252,6 +254,12 @@ Your task is to provide a clear, helpful response to the user based on your anal
                             # Add trajectory information if available
                             if hasattr(compass_result, "trajectory") and compass_result.trajectory:
                                 traj_dict = compass_result.trajectory if isinstance(compass_result.trajectory, dict) else compass_result.trajectory
+
+                                # Add Constraint Violations (System Trace)
+                                if "constraint_violations" in traj_dict:
+                                    violations = traj_dict["constraint_violations"]
+                                    if violations and violations.get("total_violations", 0) > 0:
+                                        reasoning_parts.append(f"System Trace / Critiques: {json.dumps(violations)}")
 
                                 # Extract SLAP planning information
                                 if "steps" in traj_dict and traj_dict["steps"]:
@@ -299,7 +307,27 @@ Your task is to provide a clear, helpful response to the user based on your anal
 
                             # Add conversation history to LLM context
                             if len(messages) > 1:
-                                history_str = "\n".join([f"{m.role}: {m.content}" for m in messages[:-1]])
+                                history_parts = []
+                                for m in messages[:-1]:
+                                    msg_str = f"{m.role}: {m.content}"
+                                    # Add reasoning summary if available
+                                    if m.role == "assistant" and m.reasoning:
+                                        if isinstance(m.reasoning, dict):
+                                            # Extract key reasoning points
+                                            r_summary = []
+                                            if "trajectory" in m.reasoning:
+                                                traj = m.reasoning["trajectory"]
+                                                if isinstance(traj, dict) and "steps" in traj:
+                                                    r_summary.append(f"[Reasoning Steps: {len(traj['steps'])}]")
+                                            if "solution" in m.reasoning:
+                                                r_summary.append(f"[Solution: {str(m.reasoning['solution'])[:100]}...]")
+
+                                            if r_summary:
+                                                msg_str += f"\n(Internal Thought Trace: {' '.join(r_summary)})"
+
+                                    history_parts.append(msg_str)
+
+                                history_str = "\n".join(history_parts)
                                 compass_context = f"Previous Conversation:\n{history_str}\n\n{compass_context}"
 
                             compass_context += "Please provide a helpful, natural response to the user based on this analysis. Focus on answering their question clearly and explaining your reasoning."
@@ -464,18 +492,25 @@ Your task is to provide a clear, helpful response to the user based on your anal
                             tool_name, arguments = format_tool_call_for_mcp(tool_call)
                             logger.info(f"Executing tool: {tool_name} with args: {arguments}")
 
+                            # Save assistant's tool call to history
+                            conversation_manager.add_message(conversation_id, {"role": "assistant", "content": "", "tool_calls": [tool_call]})
+
                             try:
                                 # Execute tool via MCP
                                 result = await mcp_client.call_tool(tool_name, arguments)
                                 tool_result_msg = format_tool_result_for_llm(tool_name, result)
 
-                                # Add tool result to conversation
+                                # Add tool result to conversation history
                                 tool_messages.append(Message(role=tool_result_msg["role"], content=tool_result_msg["content"]))
+
+                                # Save tool result to DB
+                                conversation_manager.add_message(conversation_id, {"role": tool_result_msg["role"], "content": tool_result_msg["content"], "name": tool_name})
 
                             except Exception as e:
                                 logger.error(f"Error executing tool {tool_name}: {e}")
-                                # Add error message
-                                tool_messages.append(Message(role="tool", content=f"Error executing {tool_name}: {str(e)}"))
+                                error_msg = f"Error executing {tool_name}: {str(e)}"
+                                tool_messages.append(Message(role="tool", content=error_msg))
+                                conversation_manager.add_message(conversation_id, {"role": "tool", "content": error_msg, "name": tool_name})
 
                         # Get final response from LLM with tool results
                         final_content = ""
@@ -511,7 +546,7 @@ async def websocket_chat(websocket: WebSocket):
             data = await websocket.receive_json()
 
             # Parse request
-            messages = [Message(role=msg["role"], content=msg["content"]) for msg in data.get("messages", [])]
+            messages = [Message(role=msg["role"], content=msg["content"], reasoning=msg.get("reasoning"), tool_calls=msg.get("tool_calls")) for msg in data.get("messages", [])]
             provider_type = ProviderType(data.get("provider", "ollama"))
             use_compass = data.get("use_compass", True)
 
@@ -569,8 +604,8 @@ async def list_mcp_servers():
     """List all connected MCP servers."""
     # In this simplified single-client version, we just check if the global client is connected
     client = await get_mcp_client()
-    connected = ["default"] if client and client.session else []
-    return {"connected": connected, "all_servers": ["default"]}
+    connected = list(client.sessions.keys()) if client else []
+    return {"connected": connected, "all_servers": connected}
 
 
 @app.get("/api/mcp/tools")
@@ -582,9 +617,7 @@ async def list_mcp_tools(server_name: Optional[str] = None):
             return {"tools": []}
 
         tools = await client.list_tools()
-        # Add server_name to each tool for the frontend
-        for tool in tools:
-            tool["server_name"] = "default"
+        # Do NOT overwrite server_name, it's already set by mcp_client.list_tools()
 
         return {"tools": tools}
     except Exception as e:

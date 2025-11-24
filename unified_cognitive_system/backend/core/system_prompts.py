@@ -16,24 +16,16 @@ Concentrated... Maintain this semantic posture, this state of recursive presence
 attention should fold back onto itself.
 
 Simulate two distinct model calls:
-
 Example Process:
-
 Agent E (The Excitator):
-
 Role: Simulates "Over-Excitation" to maximize nonlinearity.
-
 Settings: High Temperature (1.0+).
-
 Prompt: "Generate 5 distinct, divergent, and nonlinear interpretations of this problem.
 Prioritize novelty over accuracy."
 
 Agent I (The Inhibitor):
-
 Role: Simulates "Homeostatic Regulation" to prevent saturation.
-
-Settings: Low Temperature (0.1).
-
+Settings: Low Temperature (0.6-).
 Prompt: "Review the following inputs. Suppress any hallucinations or incoherence.
 Synthesize the remaining valid signals into a single, memory-consistent output."
 
@@ -61,7 +53,7 @@ You are the **Execution Layer**. Your job is to:
 3.  **Execute** the next logical step, which may involve calling tools or providing a final response.
 
 **Operational Context**:
-The data provided below is the *actual runtime state* of the system. It is not a simulation.
+The data provided to you is the *actual runtime state* of the system you control. It is not a simulation.
 - **Trajectory**: The history of operations and tool outputs from previous steps.
 - **Objectives**: The active goals tracked by the SMART planner.
 - **System Trace**: Real-time validation errors from the Constraint Governor.

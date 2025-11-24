@@ -7,6 +7,7 @@ export const MCPTools: React.FC = () => {
     const [tools, setTools] = useState<MCPTool[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [expandedTool, setExpandedTool] = useState<string | null>(null);
 
     const loadTools = async () => {
         setLoading(true);
@@ -64,7 +65,11 @@ export const MCPTools: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {tools.map((tool) => (
-                        <div key={tool.name} className="glass-card p-5 hover:border-primary-500/30 transition-colors group">
+                        <div
+                            key={tool.name}
+                            className={`glass-card p-5 hover:border-primary-500/30 transition-all duration-200 group cursor-pointer ${expandedTool === tool.name ? 'ring-1 ring-primary-500/50 bg-slate-800/80' : ''}`}
+                            onClick={() => setExpandedTool(expandedTool === tool.name ? null : tool.name)}
+                        >
                             <div className="flex items-start justify-between mb-3">
                                 <div className="p-2 rounded-lg bg-primary-500/10 text-primary-400 group-hover:bg-primary-500/20 transition-colors">
                                     <Wrench className="w-5 h-5" />
@@ -74,7 +79,7 @@ export const MCPTools: React.FC = () => {
                                 </span>
                             </div>
                             <h3 className="font-semibold text-slate-200 mb-2">{tool.name}</h3>
-                            <p className="text-sm text-slate-400 line-clamp-3 mb-4">
+                            <p className={`text-sm text-slate-400 mb-4 ${expandedTool === tool.name ? '' : 'line-clamp-3'}`}>
                                 {tool.description || 'No description provided.'}
                             </p>
 
@@ -90,6 +95,15 @@ export const MCPTools: React.FC = () => {
                                         <span className="text-xs text-slate-600 italic">None</span>
                                     )}
                                 </div>
+
+                                {expandedTool === tool.name && tool.inputSchema && (
+                                    <div className="mt-4 pt-3 border-t border-white/5 animate-fadeIn">
+                                        <h4 className="text-xs font-medium text-slate-500 mb-2">Schema:</h4>
+                                        <pre className="text-[10px] font-mono text-slate-400 bg-slate-950/50 p-2 rounded overflow-x-auto">
+                                            {JSON.stringify(tool.inputSchema, null, 2)}
+                                        </pre>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

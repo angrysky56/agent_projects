@@ -29,8 +29,10 @@ class ProviderType(Enum):
 class Message:
     """Represents a chat message."""
 
-    role: str  # "user", "assistant", "system"
+    role: str  # "user", "assistant", "system", "tool"
     content: str
+    reasoning: Optional[Dict[str, Any]] = None
+    tool_calls: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass

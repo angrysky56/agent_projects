@@ -16,6 +16,17 @@ from datetime import timedelta
 from .config import COMPASSConfig, get_config
 from .utils import COMPASSLogger, Trajectory
 
+from .shape_processor import SHAPEProcessor
+from .smart_planner import SMARTPlanner
+from .slap_pipeline import SLAPPipeline
+from .omcd_controller import oMCDController
+from .self_discover_engine import SelfDiscoverEngine
+from .integrated_intelligence import IntegratedIntelligence
+from .constraint_governor import ConstraintGovernor
+from .executive_controller import ExecutiveController
+from .representation_selector import RepresentationSelector
+from .procedural_toolkit import ProceduralToolkit
+
 
 class COMPASS:
     """
@@ -39,111 +50,28 @@ class COMPASS:
         self.llm_provider = llm_provider
         self.mcp_client = mcp_client
 
-        # Lazy initialization of components
-        self._shape_processor = None
-        self._smart_planner = None
-        self._slap_pipeline = None
-        self._omcd_controller = None
-        self._self_discover_engine = None
-        self._integrated_intelligence = None
-        self._constraint_governor = None
-        self._executive_controller = None
-        self._representation_selector = None
-        self._procedural_toolkit = None
+        # Initialize components
+        # Pass LLM provider to SHAPE for intelligent analysis
+        self.shape_processor = SHAPEProcessor(self.config.shape, self.logger, llm_provider=self.llm_provider)
+        self.smart_planner = SMARTPlanner(self.config.smart, self.logger)
+        self.slap_pipeline = SLAPPipeline(self.config.slap, self.logger, llm_provider=self.llm_provider)
+        self.omcd_controller = oMCDController(self.config.omcd, self.logger)
+        self.self_discover_engine = SelfDiscoverEngine(self.config.self_discover, self.logger, llm_provider=self.llm_provider)
+        self.integrated_intelligence = IntegratedIntelligence(self.config.intelligence, self.logger, llm_provider=self.llm_provider, mcp_client=self.mcp_client)
 
-        self.logger.info("COMPASS framework initialized")
+        # New: Constraint Governor
+        self.constraint_governor = ConstraintGovernor(self.config.cgra.governor, self.logger)
 
-    @property
-    def shape_processor(self):
-        """Lazy initialization of SHAPE Processor."""
-        if self._shape_processor is None:
-            from .shape_processor import SHAPEProcessor
+        # New: Executive Controller
+        self.executive_controller = ExecutiveController(self.config.cgra.executive, self.config.omcd, self.config.self_discover, self.logger)
 
-            self._shape_processor = SHAPEProcessor(self.config.shape, self.logger)
-        return self._shape_processor
+        # Helper components
+        self.representation_selector = RepresentationSelector(self.config.cgra.workspace, self.logger)
+        self.procedural_toolkit = ProceduralToolkit(self.config.cgra.toolkit, self.logger)
 
-    @property
-    def smart_planner(self):
-        """Lazy initialization of SMART Planner."""
-        if self._smart_planner is None:
-            from .smart_planner import SMARTPlanner
+        self.logger.info("COMPASS framework initialized with all components")
 
-            self._smart_planner = SMARTPlanner(self.config.smart, self.logger)
-        return self._smart_planner
-
-    @property
-    def slap_pipeline(self):
-        """Lazy initialization of SLAP Pipeline."""
-        if self._slap_pipeline is None:
-            from .slap_pipeline import SLAPPipeline
-
-            self._slap_pipeline = SLAPPipeline(self.config.slap, self.logger, self.llm_provider)
-        return self._slap_pipeline
-
-    @property
-    def omcd_controller(self):
-        """Lazy initialization of oMCD Controller."""
-        if self._omcd_controller is None:
-            from .omcd_controller import oMCDController
-
-            self._omcd_controller = oMCDController(self.config.omcd, self.logger)
-        return self._omcd_controller
-
-    @property
-    def self_discover_engine(self):
-        """Lazy initialization of Self-Discover Engine."""
-        if self._self_discover_engine is None:
-            from .self_discover_engine import SelfDiscoverEngine
-
-            self._self_discover_engine = SelfDiscoverEngine(self.config.self_discover, self.logger, self.llm_provider)
-        return self._self_discover_engine
-
-    @property
-    def integrated_intelligence(self):
-        """Lazy initialization of Integrated Intelligence."""
-        if self._integrated_intelligence is None:
-            from .integrated_intelligence import IntegratedIntelligence
-
-            self._integrated_intelligence = IntegratedIntelligence(self.config.intelligence, self.logger, self.llm_provider, self.mcp_client)
-        return self._integrated_intelligence
-
-    @property
-    def constraint_governor(self):
-        """Lazy initialization of Constraint Governor."""
-        if self._constraint_governor is None:
-            from .constraint_governor import ConstraintGovernor
-
-            self._constraint_governor = ConstraintGovernor(self.config.cgra.governor, self.logger)
-        return self._constraint_governor
-
-    @property
-    def executive_controller(self):
-        """Lazy initialization of Executive Controller."""
-        if self._executive_controller is None:
-            from .executive_controller import ExecutiveController
-
-            self._executive_controller = ExecutiveController(self.config.cgra.executive, self.config.omcd, self.config.self_discover, self.logger)
-        return self._executive_controller
-
-    @property
-    def representation_selector(self):
-        """Lazy initialization of Representation Selector."""
-        if self._representation_selector is None:
-            from .representation_selector import RepresentationSelector
-
-            self._representation_selector = RepresentationSelector(self.config.cgra.workspace, self.logger)
-        return self._representation_selector
-
-    @property
-    def procedural_toolkit(self):
-        """Lazy initialization of Procedural Toolkit."""
-        if self._procedural_toolkit is None:
-            from .procedural_toolkit import ProceduralToolkit
-
-            self._procedural_toolkit = ProceduralToolkit(self.config.cgra.toolkit, self.logger)
-        return self._procedural_toolkit
-
-    async def process_task(self, task_description: str, context: Optional[Dict[str, Any]] = None, max_iterations: Optional[int] = None) -> Dict[str, Any]:
+    async def process_task(self, task_description: str, context: Optional[Dict] = None, max_iterations: Optional[int] = None) -> Dict[str, Any]:
         """
         Process a task through the integrated cognitive framework.
 
@@ -155,11 +83,12 @@ class COMPASS:
         Returns:
             Dictionary containing the result and processing details
         """
-        self.logger.info(f"Processing task: {task_description}")
+        self.logger.info(f"Processing task: {task_description[:50]}...")
 
         # 1. SHAPE Input Processing
         self.logger.info("Phase 1: SHAPE Input Processing")
-        shape_result = self.shape_processor.process_user_input(task_description)
+        # Now async and LLM-powered
+        shape_result = await self.shape_processor.process_user_input(task_description)
         task_text = shape_result.get("original", task_description)  # Use original text
 
         # 2. Constraint Governor Validation (Input)

@@ -93,8 +93,18 @@ Experience COMPASS through a modern web interface with multi-provider LLM suppor
 The easiest way to get started is using the automated setup script:
 
 ```bash
-./setup.sh
+./setup.sh # or ./setup.bat on Windows
 ```
+
+Then run:
+
+```bash
+./start.sh # or ./start.bat on Windows
+```
+
+This will start both the backend and frontend servers.
+
+Click on http://localhost:3000 to open the web interface.
 
 This script will:
 1.  Check for dependencies (Python, Node.js, `uv`)
