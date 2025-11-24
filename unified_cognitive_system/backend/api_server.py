@@ -16,6 +16,7 @@ from contextlib import asynccontextmanager
 from .llm_providers import create_provider, ProviderType, Message
 from .mcp_client import initialize_mcp, shutdown_mcp, get_mcp_client
 from .compass_api import get_compass_api, ProcessingUpdate, COMPASSResult
+from .tool_permissions import get_permission_manager, classify_tool_risk, ToolPermission
 
 from .conversation_manager import ConversationManager
 
@@ -64,8 +65,10 @@ app.add_middleware(
 
 
 class ChatMessage(BaseModel):
-    role: str
+    role: str  # "system", "user", "assistant", "tool"
     content: str
+    tool_calls: Optional[List[Dict[str, Any]]] = None  # For assistant messages with tool requests
+    tool_name: Optional[str] = None  # For tool response messages
 
 
 class ChatRequest(BaseModel):
@@ -171,6 +174,16 @@ async def chat_completion(request: ChatRequest):
         # Set model if provided
         if request.model:
             provider.config.model = request.model
+
+        # Fetch available MCP tools for function calling (unless using COMPASS)
+        available_tools = []
+        if not request.use_compass:
+            from .mcp_tool_adapter import get_available_tools_for_llm
+
+            mcp_client = await get_mcp_client()
+            available_tools = await get_available_tools_for_llm(mcp_client)
+            if available_tools:
+                logger.info(f"Loaded {len(available_tools)} MCP tools for LLM function calling")
 
         if request.use_compass and len(messages) > 0:
             # Use COMPASS for enhanced reasoning
@@ -413,12 +426,66 @@ Your task is to provide a clear, helpful response to the user based on your anal
 
                 return StreamingResponse(llm_stream(), media_type="text/event-stream")
             else:
-                # Non-streaming
+                # Non-streaming with tool calling support
                 async with provider:
+                    from .mcp_tool_adapter import format_tool_call_for_mcp, format_tool_result_for_llm
+                    import json as json_module
+
+                    # Initial LLM call with tools
                     content = ""
-                    async for chunk in provider.chat_completion(messages, stream=False, temperature=request.temperature, max_tokens=request.max_tokens):
+                    tool_calls_detected = None
+
+                    async for chunk in provider.chat_completion(messages, stream=False, temperature=request.temperature, max_tokens=request.max_tokens, tools=available_tools if available_tools else None):
                         content += chunk
-                    return {"type": "content", "content": content}
+
+                    # Check if response contains tool calls
+                    try:
+                        if "{" in content and "tool_calls" in content:
+                            parsed = json_module.loads(content)
+                            if "tool_calls" in parsed:
+                                tool_calls_detected = parsed["tool_calls"]
+                    except json_module.JSONDecodeError:
+                        pass  # Normal text response
+
+                    # If tool calls detected, execute them and get final response
+                    if tool_calls_detected:
+                        logger.info(f"LLM requested {len(tool_calls_detected)} tool call(s)")
+
+                        # Build messages history with assistant's tool call request
+                        tool_messages = messages + [Message(role="assistant", content="")]
+
+                        # Execute each tool and add results
+                        mcp_client = await get_mcp_client()
+                        for tool_call in tool_calls_detected:
+                            tool_name, arguments = format_tool_call_for_mcp(tool_call)
+                            logger.info(f"Executing tool: {tool_name} with args: {arguments}")
+
+                            try:
+                                # Execute tool via MCP
+                                result = await mcp_client.call_tool(tool_name, arguments)
+                                tool_result_msg = format_tool_result_for_llm(tool_name, result)
+
+                                # Add tool result to conversation
+                                tool_messages.append(Message(role=tool_result_msg["role"], content=tool_result_msg["content"]))
+
+                            except Exception as e:
+                                logger.error(f"Error executing tool {tool_name}: {e}")
+                                # Add error message
+                                tool_messages.append(Message(role="tool", content=f"Error executing {tool_name}: {str(e)}"))
+
+                        # Get final response from LLM with tool results
+                        final_content = ""
+                        async for chunk in provider.chat_completion(tool_messages, stream=False, temperature=request.temperature, max_tokens=request.max_tokens, tools=available_tools if available_tools else None):
+                            final_content += chunk
+
+                        # Save final response
+                        conversation_manager.add_message(conversation_id, {"role": "assistant", "content": final_content})
+
+                        return {"type": "content", "content": final_content, "conversation_id": conversation_id}
+                    else:
+                        # No tool calls, return direct response
+                        conversation_manager.add_message(conversation_id, {"role": "assistant", "content": content})
+                        return {"type": "content", "content": content, "conversation_id": conversation_id}
 
     except Exception as e:
         logger.error(f"Error in chat completion: {e}", exc_info=True)
@@ -519,6 +586,133 @@ async def list_mcp_tools(server_name: Optional[str] = None):
     except Exception as e:
         logger.error(f"Error listing tools: {e}")
         return {"tools": []}
+
+
+@app.post("/api/mcp/call-tool")
+async def call_mcp_tool(request: MCPToolCall):
+    """
+    Execute an MCP tool.
+
+    Args:
+        request: MCPToolCall containing tool_name, arguments, and optional server_name
+
+    Returns:
+        The result from the tool execution
+    """
+    try:
+        client = await get_mcp_client()
+        if not client:
+            raise HTTPException(status_code=503, detail="MCP client not initialized")
+
+        if not client.sessions:
+            raise HTTPException(status_code=503, detail="No MCP servers connected")
+
+        # Call the tool
+        result = await client.call_tool(name=request.tool_name, arguments=request.arguments, server_name=request.server_name)
+
+        # The result from MCP SDK is a CallToolResult object
+        # We need to convert it to a dict for JSON serialization
+        if hasattr(result, "model_dump"):
+            result_dict = result.model_dump()
+        elif hasattr(result, "__dict__"):
+            result_dict = result.__dict__
+        else:
+            result_dict = {"result": str(result)}
+
+        return {"success": True, "result": result_dict}
+
+    except RuntimeError as e:
+        # Tool not found or server not connected
+        logger.error(f"Runtime error calling tool {request.tool_name}: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error calling tool {request.tool_name}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Tool execution failed: {str(e)}")
+
+
+# ============================================================================
+# Tool Permission Management
+# ============================================================================
+
+
+class ToolPermissionRequest(BaseModel):
+    tool_name: str
+    server_name: str
+    action: str  # "ALLOW_ALWAYS", "DENY_ALWAYS", "ASK"
+    risk_level: str  # "SAFE", "MODERATE", "DANGEROUS"
+
+
+@app.get("/api/tool-permissions")
+async def list_tool_permissions():
+    """List all stored tool permissions."""
+    try:
+        permission_manager = get_permission_manager()
+        permissions = permission_manager.list_permissions()
+        return {"permissions": [p.to_dict() for p in permissions]}
+    except Exception as e:
+        logger.error(f"Error listing permissions: {e}", exc_info=True)
+        return {"permissions": []}
+
+
+@app.post("/api/tool-permissions")
+async def save_tool_permission(request: ToolPermissionRequest):
+    """Save a tool permission decision."""
+    try:
+        permission_manager = get_permission_manager()
+
+        permission_manager.set_permission(
+            tool_name=request.tool_name,
+            server_name=request.server_name,
+            action=request.action,  # type: ignore
+            risk_level=request.risk_level,  # type: ignore
+        )
+
+        return {"success": True, "message": "Permission saved"}
+    except Exception as e:
+        logger.error(f"Error saving permission: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/tool-permissions/{server_name}/{tool_name}")
+async def remove_tool_permission(server_name: str, tool_name: str):
+    """Remove a stored tool permission."""
+    try:
+        permission_manager = get_permission_manager()
+
+        removed = permission_manager.remove_permission(tool_name, server_name)
+
+        if removed:
+            return {"success": True, "message": "Permission removed"}
+        else:
+            raise HTTPException(status_code=404, detail="Permission not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error removing permission: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/tool-permissions")
+async def clear_all_permissions():
+    """Clear all stored tool permissions."""
+    try:
+        permission_manager = get_permission_manager()
+        permission_manager.clear_all()
+        return {"success": True, "message": "All permissions cleared"}
+    except Exception as e:
+        logger.error(f"Error clearing permissions: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/tool-risk/{tool_name}")
+async def get_tool_risk_level(tool_name: str, description: str = ""):
+    """Classify a tool's risk level."""
+    try:
+        risk_level = classify_tool_risk(tool_name, description)
+        return {"tool_name": tool_name, "risk_level": risk_level}
+    except Exception as e:
+        logger.error(f"Error classifying tool risk: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================================================

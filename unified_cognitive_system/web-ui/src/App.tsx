@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ProviderSelector } from './components/ProviderSelector';
 import { MCPTools } from './components/MCPTools';
+import { ToolPermissionsSettings } from './components/ToolPermissionsSettings';
 import { useAppStore } from './store';
 import './index.css';
 
@@ -19,6 +20,8 @@ function App() {
                     {currentView === 'chat' && <ChatInterface />}
 
                     {currentView === 'mcp' && <MCPTools />}
+
+                    {currentView === 'permissions' && <ToolPermissionsSettings />}
 
                     {currentView === 'settings' && (
                         <div className="flex-1 p-8 overflow-y-auto">

@@ -41,8 +41,8 @@ interface AppState {
 
     // UI state
     sidebarOpen: boolean;
-    currentView: 'chat' | 'mcp' | 'settings';
-    setCurrentView: (view: 'chat' | 'mcp' | 'settings') => void;
+    currentView: 'chat' | 'mcp' | 'permissions' | 'settings';
+    setCurrentView: (view: 'chat' | 'mcp' | 'permissions' | 'settings') => void;
     toggleSidebar: () => void;
 }
 

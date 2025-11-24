@@ -139,6 +139,19 @@ export const Sidebar: React.FC = () => {
                         </button>
 
                         <button
+                            onClick={() => setCurrentView('permissions')}
+                            className={clsx(
+                                'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200',
+                                currentView === 'permissions'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                            )}
+                        >
+                            <Settings className="w-4 h-4" />
+                            <span className="text-sm font-medium">Permissions</span>
+                        </button>
+
+                        <button
                             onClick={() => setCurrentView('settings')}
                             className={clsx(
                                 'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200',

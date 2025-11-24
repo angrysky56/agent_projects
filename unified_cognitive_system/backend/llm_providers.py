@@ -60,8 +60,17 @@ class BaseLLMProvider(ABC):
             await self.client.aclose()
 
     @abstractmethod
-    async def chat_completion(self, messages: List[Message], stream: bool = False, temperature: float = 0.7, max_tokens: Optional[int] = None, **kwargs) -> AsyncIterator[str]:
-        """Generate chat completion (streaming or non-streaming)."""
+    async def chat_completion(self, messages: List[Message], stream: bool = False, temperature: float = 0.7, max_tokens: Optional[int] = None, tools: Optional[List[Dict[str, Any]]] = None, **kwargs) -> AsyncIterator[str]:
+        """Generate chat completion (streaming or non-streaming).
+
+        Args:
+            messages: List of Message objects
+            stream: Whether to stream the response
+            temperature: Sampling temperature
+            max_tokens: Maximum tokens to generate
+            tools: Optional list of OpenAI-format function definitions for function calling
+            **kwargs: Additional provider-specific parameters
+        """
         pass
 
     @abstractmethod
@@ -150,8 +159,8 @@ class OllamaProvider(BaseLLMProvider):
             logger.error(f"Failed to list Ollama models: {e}")
             return []
 
-    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = None, **kwargs) -> AsyncIterator[str]:
-        """Generate Ollama chat completion with streaming support."""
+    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = None, tools: Optional[List[Dict[str, Any]]] = None, **kwargs) -> AsyncIterator[str]:
+        """Generate Ollama chat completion with streaming support and tool calling."""
         await self._detect_mode()
 
         # Convert messages to Ollama format
@@ -173,6 +182,11 @@ class OllamaProvider(BaseLLMProvider):
         if max_tokens:
             payload["options"]["num_predict"] = max_tokens
 
+        # Add tools if provided (Ollama function calling support)
+        if tools:
+            payload["tools"] = tools
+            logger.info(f"Enabling function calling with {len(tools)} tools")
+
         # Add any additional kwargs
         payload.update(kwargs)
 
@@ -185,16 +199,29 @@ class OllamaProvider(BaseLLMProvider):
 
                         try:
                             chunk = json.loads(line)
-                            if "message" in chunk and "content" in chunk["message"]:
-                                yield chunk["message"]["content"]
+                            message = chunk.get("message", {})
+
+                            # Check for tool calls in the response
+                            if "tool_calls" in message:
+                                # Return the entire message with tool_calls as JSON
+                                yield json.dumps({"tool_calls": message["tool_calls"]})
+                            elif "content" in message:
+                                yield message["content"]
                         except json.JSONDecodeError:
                             continue
         else:
             response = await self.client.post(f"{self.effective_url}/api/chat", json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
-            if "message" in data and "content" in data["message"]:
-                yield data["message"]["content"]
+            message = data.get("message", {})
+
+            # Check for tool calls
+            if "tool_calls" in message:
+                import json
+
+                yield json.dumps({"tool_calls": message["tool_calls"]})
+            elif "content" in message:
+                yield message["content"]
 
 
 class LMStudioProvider(BaseLLMProvider):
@@ -227,7 +254,7 @@ class LMStudioProvider(BaseLLMProvider):
             logger.error(f"Failed to list LM Studio models: {e}")
             return []
 
-    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = None, **kwargs) -> AsyncIterator[str]:
+    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = None, tools: Optional[List[Dict[str, Any]]] = None, **kwargs) -> AsyncIterator[str]:
         """Generate LM Studio chat completion."""
         openai_messages = [{"role": msg.role, "content": msg.content} for msg in messages]
 
@@ -294,7 +321,7 @@ class OpenAIProvider(BaseLLMProvider):
             logger.error(f"Failed to list OpenAI models: {e}")
             return []
 
-    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = None, **kwargs) -> AsyncIterator[str]:
+    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = None, tools: Optional[List[Dict[str, Any]]] = None, **kwargs) -> AsyncIterator[str]:
         """Generate OpenAI chat completion."""
         if not self.config.api_key:
             raise ValueError("OpenAI API key not configured")
@@ -346,7 +373,7 @@ class AnthropicProvider(BaseLLMProvider):
         """List Anthropic models (hardcoded as API doesn't provide list endpoint)."""
         return ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
 
-    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = 4096, **kwargs) -> AsyncIterator[str]:
+    async def chat_completion(self, messages: List[Message], stream: bool = True, temperature: float = 0.7, max_tokens: Optional[int] = 4096, tools: Optional[List[Dict[str, Any]]] = None, **kwargs) -> AsyncIterator[str]:
         """Generate Anthropic chat completion."""
         if not self.config.api_key:
             raise ValueError("Anthropic API key not configured")
